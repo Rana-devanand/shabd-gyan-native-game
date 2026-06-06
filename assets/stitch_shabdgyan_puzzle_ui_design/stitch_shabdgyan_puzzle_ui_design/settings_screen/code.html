@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Settings - SHABDGYAN</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#43474e",
+                        "error-container": "#93000a",
+                        "on-tertiary-container": "#6b89af",
+                        "secondary-fixed-dim": "#93d4b7",
+                        "on-surface-variant": "#c4c6cf",
+                        "surface-container-lowest": "#0c0f0f",
+                        "on-primary-container": "#6f89ad",
+                        "on-secondary-container": "#82c2a6",
+                        "error": "#ffb4ab",
+                        "inverse-on-surface": "#2f3131",
+                        "on-secondary": "#003827",
+                        "surface-container-low": "#1a1c1c",
+                        "on-tertiary": "#0f3254",
+                        "outline": "#8d9198",
+                        "inverse-primary": "#466082",
+                        "surface-variant": "#333535",
+                        "on-surface": "#e2e2e2",
+                        "tertiary-container": "#00203d",
+                        "tertiary-fixed-dim": "#aac9f2",
+                        "surface-container": "#1e2020",
+                        "secondary-container": "#07513b",
+                        "on-primary": "#163151",
+                        "on-tertiary-fixed-variant": "#2a486b",
+                        "on-background": "#e2e2e2",
+                        "tertiary-fixed": "#d2e4ff",
+                        "secondary": "#93d4b7",
+                        "background": "#121414",
+                        "primary-fixed-dim": "#aec8ef",
+                        "primary-container": "#00203f",
+                        "surface-tint": "#aec8ef",
+                        "on-error-container": "#ffdad6",
+                        "secondary-fixed": "#aef0d2",
+                        "on-error": "#690005",
+                        "primary-fixed": "#d3e3ff",
+                        "on-tertiary-fixed": "#001c37",
+                        "surface": "#121414",
+                        "on-secondary-fixed-variant": "#07513b",
+                        "on-primary-fixed-variant": "#2e4869",
+                        "on-secondary-fixed": "#002116",
+                        "surface-dim": "#121414",
+                        "surface-container-highest": "#333535",
+                        "surface-bright": "#37393a",
+                        "inverse-surface": "#e2e2e2",
+                        "tertiary": "#aac9f2",
+                        "on-primary-fixed": "#001c38",
+                        "primary": "#aec8ef",
+                        "surface-container-high": "#282a2b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-max": "1200px",
+                        "lg": "40px",
+                        "sm": "12px",
+                        "gutter": "16px",
+                        "xl": "64px",
+                        "md": "24px",
+                        "xs": "4px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "display-lg-mobile": ["Nunito Sans"],
+                        "label-bold": ["Nunito Sans"],
+                        "display-lg": ["Nunito Sans"],
+                        "tile-text": ["Nunito Sans"],
+                        "body-md": ["Nunito Sans"],
+                        "title-lg": ["Nunito Sans"],
+                        "headline-md": ["Nunito Sans"]
+                    },
+                    "fontSize": {
+                        "display-lg-mobile": ["36px", { "lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "900" }],
+                        "label-bold": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "900" }],
+                        "tile-text": ["28px", { "lineHeight": "1", "fontWeight": "800" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "800" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #00203F; /* Deep Navy Background Override for the specific aesthetic */
+            color: #e2e2e2;
+        }
+        .mint-border {
+            border: 1px solid rgba(173, 239, 209, 0.15);
+        }
+        .mint-text {
+            color: #ADEFD1;
+        }
+        .bg-navy-surface {
+            background-color: rgba(0, 32, 63, 0.8);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-screen flex flex-col font-body-md antialiased selection:bg-secondary selection:text-on-secondary">
+<!-- TopAppBar -->
+<header class="sticky top-0 w-full z-50 flex justify-between items-center px-gutter py-sm max-w-container-max mx-auto bg-background/80 dark:bg-background/80 backdrop-blur-xl border-b border-secondary/15">
+<div class="flex items-center gap-4">
+<button class="text-secondary dark:text-secondary hover:opacity-80 transition-opacity active:scale-95 transition-transform duration-100 flex items-center justify-center h-10 w-10 rounded-full">
+<span class="material-symbols-outlined text-2xl" data-icon="arrow_back" data-weight="regular">arrow_back</span>
+</button>
+</div>
+<h1 class="font-display-lg-mobile text-display-lg-mobile tracking-tighter text-secondary dark:text-secondary absolute left-1/2 -translate-x-1/2">SHABDGYAN</h1>
+<div class="flex items-center">
+<!-- Empty div to balance header flex -->
+<div class="w-10 h-10"></div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow w-full max-w-[600px] mx-auto px-gutter py-md space-y-xl">
+<div class="text-center mb-xl pt-lg">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-2">Settings</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Manage your game preferences.</p>
+</div>
+<!-- Section: Game Preferences -->
+<section class="space-y-sm">
+<h3 class="font-label-bold text-label-bold uppercase tracking-[0.1em] mint-text pl-4">Game Preferences</h3>
+<div class="bg-navy-surface backdrop-blur-md rounded-xl mint-border overflow-hidden">
+<!-- Toggle Row 1 -->
+<div class="flex items-center justify-between p-4 border-b border-secondary/15">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined mint-text" data-icon="volume_up" data-weight="regular">volume_up</span>
+<span class="font-body-md text-body-md text-on-surface">Sound Effects</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-tertiary-container peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-secondary after:border-secondary after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary/20 border border-secondary/30"></div>
+</label>
+</div>
+<!-- Toggle Row 2 -->
+<div class="flex items-center justify-between p-4 border-b border-secondary/15">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined mint-text" data-icon="vibration" data-weight="regular">vibration</span>
+<span class="font-body-md text-body-md text-on-surface">Haptic Feedback</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-tertiary-container peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-secondary after:border-secondary after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary/20 border border-secondary/30"></div>
+</label>
+</div>
+<!-- Chevron Row 1 -->
+<button class="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors text-left border-b border-secondary/15">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined mint-text" data-icon="translate" data-weight="regular">translate</span>
+<span class="font-body-md text-body-md text-on-surface">Language</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md text-on-surface-variant">English</span>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="chevron_right" data-weight="regular">chevron_right</span>
+</div>
+</button>
+<!-- Chevron Row 2 -->
+<button class="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors text-left">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined mint-text" data-icon="psychology" data-weight="regular">psychology</span>
+<span class="font-body-md text-body-md text-on-surface">Difficulty</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-body-md text-body-md text-on-surface-variant">Normal</span>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="chevron_right" data-weight="regular">chevron_right</span>
+</div>
+</button>
+</div>
+</section>
+<!-- Section: Account -->
+<section class="space-y-sm">
+<h3 class="font-label-bold text-label-bold uppercase tracking-[0.1em] mint-text pl-4">Account</h3>
+<div class="bg-navy-surface backdrop-blur-md rounded-xl mint-border overflow-hidden">
+<button class="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors text-left border-b border-secondary/15">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined mint-text" data-icon="manage_accounts" data-weight="regular">manage_accounts</span>
+<span class="font-body-md text-body-md text-on-surface">Manage Profile</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="chevron_right" data-weight="regular">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors text-left border-b border-secondary/15">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined mint-text" data-icon="bar_chart" data-weight="regular">bar_chart</span>
+<span class="font-body-md text-body-md text-on-surface">Statistics</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="chevron_right" data-weight="regular">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-4 hover:bg-error/10 transition-colors text-left group">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-error group-hover:text-error-container transition-colors" data-icon="logout" data-weight="regular">logout</span>
+<span class="font-body-md text-body-md text-error group-hover:text-error-container transition-colors">Sign Out</span>
+</div>
+</button>
+</div>
+</section>
+<!-- Spacer for Bottom Nav -->
+<div class="h-32 md:hidden"></div>
+</main>
+<!-- BottomNavBar (Hidden on desktop, logic dictates suppression on settings, but keeping as per standard if needed, though instructions say to suppress on transactional/settings. I will SUPPRESS the BottomNavBar as per the "Contextual State & Identity" -> "Automatic Suppression" rule: Settings screens imply a temporary departure.) -->
+</body></html>

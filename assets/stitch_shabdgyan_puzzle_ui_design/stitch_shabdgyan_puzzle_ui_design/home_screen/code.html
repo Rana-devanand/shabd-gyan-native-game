@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SHABDGYAN - Home</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,200..1000;1,6..12,200..1000&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#43474e",
+                    "error-container": "#93000a",
+                    "on-tertiary-container": "#6b89af",
+                    "secondary-fixed-dim": "#93d4b7",
+                    "on-surface-variant": "#c4c6cf",
+                    "surface-container-lowest": "#0c0f0f",
+                    "on-primary-container": "#6f89ad",
+                    "on-secondary-container": "#82c2a6",
+                    "error": "#ffb4ab",
+                    "inverse-on-surface": "#2f3131",
+                    "on-secondary": "#003827",
+                    "surface-container-low": "#1a1c1c",
+                    "on-tertiary": "#0f3254",
+                    "outline": "#8d9198",
+                    "inverse-primary": "#466082",
+                    "surface-variant": "#333535",
+                    "on-surface": "#e2e2e2",
+                    "tertiary-container": "#00203d",
+                    "tertiary-fixed-dim": "#aac9f2",
+                    "surface-container": "#1e2020",
+                    "secondary-container": "#07513b",
+                    "on-primary": "#163151",
+                    "on-tertiary-fixed-variant": "#2a486b",
+                    "on-background": "#e2e2e2",
+                    "tertiary-fixed": "#d2e4ff",
+                    "secondary": "#93d4b7",
+                    "background": "#121414",
+                    "primary-fixed-dim": "#aec8ef",
+                    "primary-container": "#00203f",
+                    "surface-tint": "#aec8ef",
+                    "on-error-container": "#ffdad6",
+                    "secondary-fixed": "#aef0d2",
+                    "on-error": "#690005",
+                    "primary-fixed": "#d3e3ff",
+                    "on-tertiary-fixed": "#001c37",
+                    "surface": "#121414",
+                    "on-secondary-fixed-variant": "#07513b",
+                    "on-primary-fixed-variant": "#2e4869",
+                    "on-secondary-fixed": "#002116",
+                    "surface-dim": "#121414",
+                    "surface-container-highest": "#333535",
+                    "surface-bright": "#37393a",
+                    "inverse-surface": "#e2e2e2",
+                    "tertiary": "#aac9f2",
+                    "on-primary-fixed": "#001c38",
+                    "primary": "#aec8ef",
+                    "surface-container-high": "#282a2b"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-max": "1200px",
+                    "lg": "40px",
+                    "sm": "12px",
+                    "gutter": "16px",
+                    "xl": "64px",
+                    "md": "24px",
+                    "xs": "4px",
+                    "base": "8px"
+            },
+            "fontFamily": {
+                    "display-lg-mobile": [
+                            "Nunito Sans"
+                    ],
+                    "label-bold": [
+                            "Nunito Sans"
+                    ],
+                    "display-lg": [
+                            "Nunito Sans"
+                    ],
+                    "tile-text": [
+                            "Nunito Sans"
+                    ],
+                    "body-md": [
+                            "Nunito Sans"
+                    ],
+                    "title-lg": [
+                            "Nunito Sans"
+                    ],
+                    "headline-md": [
+                            "Nunito Sans"
+                    ]
+            },
+            "fontSize": {
+                    "display-lg-mobile": [
+                            "36px",
+                            {
+                                    "lineHeight": "42px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "900"
+                            }
+                    ],
+                    "label-bold": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "letterSpacing": "0.05em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "display-lg": [
+                            "48px",
+                            {
+                                    "lineHeight": "56px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "900"
+                            }
+                    ],
+                    "tile-text": [
+                            "28px",
+                            {
+                                    "lineHeight": "1",
+                                    "fontWeight": "800"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "title-lg": [
+                            "20px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "800"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #00203F; /* Deep Navy Background */
+            color: #e2e2e2; /* on-surface */
+        }
+        
+        .card-border {
+            border: 1px solid rgba(173, 239, 209, 0.15); /* Mint outline */
+        }
+        
+        .mint-bg {
+            background-color: #ADEFD1;
+        }
+        
+        .mint-text {
+            color: #ADEFD1;
+        }
+        
+        .navy-text {
+            color: #00203F;
+        }
+        
+        .chip-unselected {
+            border: 1px solid #ADEFD1;
+            background-color: transparent;
+            color: #ADEFD1;
+        }
+        
+        .chip-selected {
+            background-color: #ADEFD1;
+            color: #00203F;
+            border: 1px solid #ADEFD1;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-body-md min-h-screen flex flex-col antialiased">
+<!-- TopAppBar -->
+<header class="bg-primary-container/80 dark:bg-primary-container/80 backdrop-blur-xl border-b border-secondary/15 sticky top-0 w-full z-50 flex justify-between items-center px-gutter py-sm max-w-container-max mx-auto">
+<div class="flex items-center gap-sm">
+<div class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-primary-container font-label-bold text-label-bold shrink-0">
+                R
+            </div>
+<div class="flex flex-col">
+<span class="text-on-surface-variant font-label-bold text-[12px] uppercase tracking-wider">Namaste</span>
+<span class="font-headline-md text-headline-md text-secondary dark:text-secondary tracking-tight">Rahul</span>
+</div>
+</div>
+<div class="font-display-lg-mobile text-display-lg-mobile tracking-tighter text-secondary dark:text-secondary hidden md:block absolute left-1/2 -translate-x-1/2">
+            SHABDGYAN
+        </div>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-secondary dark:text-secondary hover:bg-secondary/10 transition-colors" data-icon="settings">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 w-full max-w-container-max mx-auto px-gutter py-md pb-32 md:pb-12 grid grid-cols-4 md:grid-cols-12 gap-gutter">
+<!-- Center Focus Content -->
+<div class="col-span-4 md:col-start-4 md:col-span-6 flex flex-col gap-lg">
+<!-- Streak Banner -->
+<div class="mint-bg rounded-xl p-md flex items-center justify-between hover:scale-[0.98] transition-transform duration-200 cursor-pointer shadow-[0_0_20px_rgba(173,239,209,0.1)]">
+<div class="flex items-center gap-sm">
+<div class="w-12 h-12 rounded-full bg-primary-container flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+</div>
+<div class="flex flex-col">
+<span class="font-title-lg text-title-lg navy-text">7 Day Streak!</span>
+<span class="font-label-bold text-label-bold text-primary-container/70">Keep the flame alive</span>
+</div>
+</div>
+<span class="material-symbols-outlined navy-text">chevron_right</span>
+</div>
+<!-- Stats Row -->
+<div class="grid grid-cols-2 gap-sm">
+<!-- Stat Card 1 -->
+<div class="bg-primary-container rounded-xl p-md card-border flex flex-col gap-xs relative overflow-hidden group">
+<div class="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
+<span class="material-symbols-outlined text-9xl">workspace_premium</span>
+</div>
+<span class="material-symbols-outlined mint-text mb-2">workspace_premium</span>
+<span class="font-display-lg-mobile text-display-lg-mobile text-white relative z-10">42</span>
+<span class="font-label-bold text-label-bold text-secondary/70 relative z-10 uppercase tracking-widest">Words Found</span>
+</div>
+<!-- Stat Card 2 -->
+<div class="bg-primary-container rounded-xl p-md card-border flex flex-col gap-xs relative overflow-hidden group">
+<div class="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
+<span class="material-symbols-outlined text-9xl">bolt</span>
+</div>
+<span class="material-symbols-outlined mint-text mb-2">bolt</span>
+<span class="font-display-lg-mobile text-display-lg-mobile text-white relative z-10">8</span>
+<span class="font-label-bold text-label-bold text-secondary/70 relative z-10 uppercase tracking-widest">Levels Done</span>
+</div>
+</div>
+<!-- Daily CTA -->
+<button class="w-full mint-bg rounded-xl p-lg flex flex-col items-center justify-center gap-sm hover:scale-[0.98] transition-transform duration-200 relative overflow-hidden group">
+<div class="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<span class="material-symbols-outlined navy-text text-5xl mb-2" style="font-variation-settings: 'FILL' 1;">extension</span>
+<span class="font-headline-md text-headline-md navy-text">Play Daily Challenge</span>
+<span class="font-label-bold text-label-bold text-primary-container/70">New puzzle available now</span>
+</button>
+<!-- Categories -->
+<section class="flex flex-col gap-md">
+<div class="flex items-center justify-between">
+<h2 class="font-title-lg text-title-lg text-white">Categories</h2>
+<button class="text-secondary font-label-bold text-label-bold hover:opacity-80">See All</button>
+</div>
+<div class="flex flex-wrap gap-base">
+<button class="chip-selected rounded-full px-4 py-2 font-label-bold text-label-bold transition-all duration-200 hover:scale-[0.98]">
+                        Food
+                    </button>
+<button class="chip-unselected rounded-full px-4 py-2 font-label-bold text-label-bold transition-all duration-200 hover:bg-secondary/10">
+                        Nature
+                    </button>
+<button class="chip-unselected rounded-full px-4 py-2 font-label-bold text-label-bold transition-all duration-200 hover:bg-secondary/10">
+                        Festival
+                    </button>
+<button class="chip-unselected rounded-full px-4 py-2 font-label-bold text-label-bold transition-all duration-200 hover:bg-secondary/10">
+                        Animals
+                    </button>
+<button class="chip-unselected rounded-full px-4 py-2 font-label-bold text-label-bold transition-all duration-200 hover:bg-secondary/10">
+                        Cities
+                    </button>
+</div>
+</section>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden bg-primary-container/90 dark:bg-primary-container/90 backdrop-blur-2xl border-t border-secondary/15 fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-gutter pb-8 pt-2 rounded-t-xl">
+<!-- Home (Active) -->
+<a class="flex flex-col items-center justify-center text-on-secondary bg-secondary rounded-xl px-4 py-1 hover:text-secondary transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform mb-1" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-bold text-label-bold text-[10px]">Home</span>
+</a>
+<!-- Daily -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:text-secondary transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform mb-1">event_upcoming</span>
+<span class="font-label-bold text-label-bold text-[10px]">Daily</span>
+</a>
+<!-- Ranks -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:text-secondary transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform mb-1">leaderboard</span>
+<span class="font-label-bold text-label-bold text-[10px]">Ranks</span>
+</a>
+<!-- Profile -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:text-secondary transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform mb-1">person</span>
+<span class="font-label-bold text-label-bold text-[10px]">Profile</span>
+</a>
+</nav>
+<!-- Side Nav / Top Nav Links (Desktop) - Abstracted for layout clarity, normally integrated into header or left rail in grid -->
+<div class="hidden md:flex fixed top-0 left-0 h-screen w-64 border-r border-secondary/15 bg-primary-container/80 backdrop-blur-xl p-lg flex-col gap-xl">
+<div class="font-display-lg text-display-lg tracking-tighter text-secondary">
+            SHABD<br/>GYAN
+        </div>
+<div class="flex flex-col gap-sm">
+<a class="flex items-center gap-md text-secondary font-bold px-4 py-3 rounded-lg bg-secondary/10" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-bold text-label-bold">Home</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant hover:text-secondary hover:bg-secondary/5 px-4 py-3 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">event_upcoming</span>
+<span class="font-label-bold text-label-bold">Daily</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant hover:text-secondary hover:bg-secondary/5 px-4 py-3 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">leaderboard</span>
+<span class="font-label-bold text-label-bold">Ranks</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant hover:text-secondary hover:bg-secondary/5 px-4 py-3 rounded-lg transition-colors mt-auto" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-bold text-label-bold">Profile</span>
+</a>
+</div>
+</div>
+</body></html>

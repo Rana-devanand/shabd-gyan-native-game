@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SHABDGYAN - Splash Screen</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#43474e",
+                        "error-container": "#93000a",
+                        "on-tertiary-container": "#6b89af",
+                        "secondary-fixed-dim": "#93d4b7",
+                        "on-surface-variant": "#c4c6cf",
+                        "surface-container-lowest": "#0c0f0f",
+                        "on-primary-container": "#6f89ad",
+                        "on-secondary-container": "#82c2a6",
+                        "error": "#ffb4ab",
+                        "inverse-on-surface": "#2f3131",
+                        "on-secondary": "#003827",
+                        "surface-container-low": "#1a1c1c",
+                        "on-tertiary": "#0f3254",
+                        "outline": "#8d9198",
+                        "inverse-primary": "#466082",
+                        "surface-variant": "#333535",
+                        "on-surface": "#e2e2e2",
+                        "tertiary-container": "#00203d",
+                        "tertiary-fixed-dim": "#aac9f2",
+                        "surface-container": "#1e2020",
+                        "secondary-container": "#07513b",
+                        "on-primary": "#163151",
+                        "on-tertiary-fixed-variant": "#2a486b",
+                        "on-background": "#e2e2e2",
+                        "tertiary-fixed": "#d2e4ff",
+                        "secondary": "#93d4b7",
+                        "background": "#121414",
+                        "primary-fixed-dim": "#aec8ef",
+                        "primary-container": "#00203f",
+                        "surface-tint": "#aec8ef",
+                        "on-error-container": "#ffdad6",
+                        "secondary-fixed": "#aef0d2",
+                        "on-error": "#690005",
+                        "primary-fixed": "#d3e3ff",
+                        "on-tertiary-fixed": "#001c37",
+                        "surface": "#121414",
+                        "on-secondary-fixed-variant": "#07513b",
+                        "on-primary-fixed-variant": "#2e4869",
+                        "on-secondary-fixed": "#002116",
+                        "surface-dim": "#121414",
+                        "surface-container-highest": "#333535",
+                        "surface-bright": "#37393a",
+                        "inverse-surface": "#e2e2e2",
+                        "tertiary": "#aac9f2",
+                        "on-primary-fixed": "#001c38",
+                        "primary": "#aec8ef",
+                        "surface-container-high": "#282a2b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-max": "1200px",
+                        "lg": "40px",
+                        "sm": "12px",
+                        "gutter": "16px",
+                        "xl": "64px",
+                        "md": "24px",
+                        "xs": "4px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "display-lg-mobile": ["Nunito Sans"],
+                        "label-bold": ["Nunito Sans"],
+                        "display-lg": ["Nunito Sans"],
+                        "tile-text": ["Nunito Sans"],
+                        "body-md": ["Nunito Sans"],
+                        "title-lg": ["Nunito Sans"],
+                        "headline-md": ["Nunito Sans"]
+                    },
+                    "fontSize": {
+                        "display-lg-mobile": ["36px", { "lineHeight": "42px", "letterSpacing": "-0.02em", "fontWeight": "900" }],
+                        "label-bold": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "900" }],
+                        "tile-text": ["28px", { "lineHeight": "1", "fontWeight": "800" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "title-lg": ["20px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "800" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glow-ring {
+            box-shadow: 0 0 40px 10px rgba(173, 239, 209, 0.15);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-primary-container text-on-surface flex flex-col items-center justify-center min-h-screen relative overflow-hidden selection:bg-secondary selection:text-primary-container">
+<!-- Ambient background effect -->
+<div class="absolute inset-0 z-0 opacity-10 bg-[radial-gradient(circle_at_center,rgba(173,239,209,0.2)_0%,transparent_70%)]"></div>
+<main class="relative z-10 flex flex-col items-center justify-center w-full max-w-md px-gutter text-center">
+<!-- Logo Icon with Glow -->
+<div class="relative flex items-center justify-center mb-md">
+<div class="absolute inset-0 rounded-full glow-ring bg-secondary/10 animate-pulse"></div>
+<div class="relative z-10 p-sm rounded-2xl bg-secondary/10 border border-secondary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-[64px] text-secondary" style="font-variation-settings: 'FILL' 1;">
+                    extension
+                </span>
+</div>
+</div>
+<!-- Brand Name -->
+<h1 class="font-display-lg-mobile text-display-lg-mobile text-secondary tracking-[4px] mb-xs">
+            SHABDGYAN
+        </h1>
+<!-- Tagline -->
+<p class="font-title-lg text-title-lg text-secondary/70 opacity-80 mt-2">
+            Clue Padho · Word Banao
+        </p>
+</main>
+<!-- Version Number -->
+<footer class="absolute bottom-lg text-center w-full z-10">
+<p class="font-label-bold text-label-bold text-on-surface-variant/50 uppercase tracking-widest">
+            v1.0.0
+        </p>
+</footer>
+<!-- Simple loading animation script -->
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const logoIcon = document.querySelector('.material-symbols-outlined');
+            let rotation = 0;
+            
+            // Subtle rotation effect on load to show activity
+            const animateGlow = () => {
+                rotation += 0.5;
+                if (logoIcon) {
+                    logoIcon.style.transform = `rotate(${Math.sin(rotation * 0.05) * 5}deg)`;
+                }
+                requestAnimationFrame(animateGlow);
+            };
+            
+            animateGlow();
+        });
+    </script>
+</body></html>

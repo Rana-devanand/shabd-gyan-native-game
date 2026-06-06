@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SHABDGYAN - Daily Challenge</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#43474e",
+                    "error-container": "#93000a",
+                    "on-tertiary-container": "#6b89af",
+                    "secondary-fixed-dim": "#93d4b7",
+                    "on-surface-variant": "#c4c6cf",
+                    "surface-container-lowest": "#0c0f0f",
+                    "on-primary-container": "#6f89ad",
+                    "on-secondary-container": "#82c2a6",
+                    "error": "#ffb4ab",
+                    "inverse-on-surface": "#2f3131",
+                    "on-secondary": "#003827",
+                    "surface-container-low": "#1a1c1c",
+                    "on-tertiary": "#0f3254",
+                    "outline": "#8d9198",
+                    "inverse-primary": "#466082",
+                    "surface-variant": "#333535",
+                    "on-surface": "#e2e2e2",
+                    "tertiary-container": "#00203d",
+                    "tertiary-fixed-dim": "#aac9f2",
+                    "surface-container": "#1e2020",
+                    "secondary-container": "#07513b",
+                    "on-primary": "#163151",
+                    "on-tertiary-fixed-variant": "#2a486b",
+                    "on-background": "#e2e2e2",
+                    "tertiary-fixed": "#d2e4ff",
+                    "secondary": "#93d4b7",
+                    "background": "#121414",
+                    "primary-fixed-dim": "#aec8ef",
+                    "primary-container": "#00203f",
+                    "surface-tint": "#aec8ef",
+                    "on-error-container": "#ffdad6",
+                    "secondary-fixed": "#aef0d2",
+                    "on-error": "#690005",
+                    "primary-fixed": "#d3e3ff",
+                    "on-tertiary-fixed": "#001c37",
+                    "surface": "#121414",
+                    "on-secondary-fixed-variant": "#07513b",
+                    "on-primary-fixed-variant": "#2e4869",
+                    "on-secondary-fixed": "#002116",
+                    "surface-dim": "#121414",
+                    "surface-container-highest": "#333535",
+                    "surface-bright": "#37393a",
+                    "inverse-surface": "#e2e2e2",
+                    "tertiary": "#aac9f2",
+                    "on-primary-fixed": "#001c38",
+                    "primary": "#aec8ef",
+                    "surface-container-high": "#282a2b"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-max": "1200px",
+                    "lg": "40px",
+                    "sm": "12px",
+                    "gutter": "16px",
+                    "xl": "64px",
+                    "md": "24px",
+                    "xs": "4px",
+                    "base": "8px"
+            },
+            "fontFamily": {
+                    "display-lg-mobile": [
+                            "Nunito Sans"
+                    ],
+                    "label-bold": [
+                            "Nunito Sans"
+                    ],
+                    "display-lg": [
+                            "Nunito Sans"
+                    ],
+                    "tile-text": [
+                            "Nunito Sans"
+                    ],
+                    "body-md": [
+                            "Nunito Sans"
+                    ],
+                    "title-lg": [
+                            "Nunito Sans"
+                    ],
+                    "headline-md": [
+                            "Nunito Sans"
+                    ]
+            },
+            "fontSize": {
+                    "display-lg-mobile": [
+                            "36px",
+                            {
+                                    "lineHeight": "42px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "900"
+                            }
+                    ],
+                    "label-bold": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "letterSpacing": "0.05em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "display-lg": [
+                            "48px",
+                            {
+                                    "lineHeight": "56px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "900"
+                            }
+                    ],
+                    "tile-text": [
+                            "28px",
+                            {
+                                    "lineHeight": "1",
+                                    "fontWeight": "800"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "title-lg": [
+                            "20px",
+                            {
+                                    "lineHeight": "28px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "800"
+                            }
+                    ]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #00203F; /* Deep Navy */
+            color: #e2e2e2;
+        }
+        .mint-border {
+            border: 1px solid rgba(173, 239, 209, 0.15);
+        }
+        .text-mint {
+            color: #ADEFD1; /* Mint Accent */
+        }
+        .bg-mint {
+            background-color: #ADEFD1;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-body-md antialiased min-h-screen flex flex-col pb-24 md:pb-0">
+<!-- TopAppBar -->
+<header class="sticky top-0 w-full z-50 flex justify-between items-center px-gutter py-sm max-w-container-max mx-auto bg-background/80 dark:bg-background/80 backdrop-blur-xl border-b border-secondary/15">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full overflow-hidden mint-border bg-surface-container">
+<img alt="User profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuChIVcUCII5TXQlMaqVY25Mh016ylpHjfrb7VBVLdeDkm_RQqHNJLNMZYinLrwSjtpVubCR07Z83A28MHLE6pvhL3W_2GywAwF-rHWJ_JGYbFFE-4kIW-gYd9xQPHNRYtPVyaezlAqaCR7sKyVU-I36xwi0hM_9Q4wcO1qkTkOxbrp1wwh9FWWHZX8kT8uOKrnxhQwl6qnV5hzY_7eVXvSs6WP-NpvkzTNGj6iD1b__kTOaOjx6ND5yXzoyOG1Q8AV7xvp7pxevcWHH"/>
+</div>
+</div>
+<div class="font-display-lg-mobile text-display-lg-mobile tracking-tighter text-secondary dark:text-secondary">
+            SHABDGYAN
+        </div>
+<div>
+<button class="w-10 h-10 flex items-center justify-center text-secondary dark:text-secondary hover:opacity-80 transition-opacity active:scale-95 duration-100">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow w-full max-w-[600px] mx-auto px-gutter py-8 flex flex-col gap-6">
+<!-- Header Section -->
+<div class="flex flex-col items-center text-center gap-4">
+<div class="px-4 py-1 rounded-full border border-secondary text-secondary font-label-bold text-label-bold uppercase tracking-wider">
+                Daily Challenge
+            </div>
+<h1 class="font-display-lg-mobile text-display-lg-mobile md:font-display-lg md:text-display-lg text-on-surface">Aaj ka Puzzle</h1>
+<div class="flex items-center gap-2 text-secondary font-headline-md text-headline-md">
+<span class="material-symbols-outlined text-secondary" style="font-size: 28px;">timer</span>
+<span>08:42:17</span>
+</div>
+</div>
+<!-- Clue Card -->
+<div class="bg-surface-container rounded-xl mint-border p-6 mt-4 relative overflow-hidden flex flex-col items-center justify-center min-h-[160px]">
+<div class="absolute inset-0 bg-gradient-to-br from-secondary/5 to-transparent pointer-events-none"></div>
+<p class="font-title-lg text-title-lg text-on-surface text-center z-10">
+                "It brightens the morning and sets in the evening."
+            </p>
+<p class="text-on-surface-variant font-label-bold text-label-bold mt-4 uppercase tracking-widest z-10">
+                Hint: 3 Letters
+            </p>
+</div>
+<!-- Difficulty Selector -->
+<div class="flex flex-col gap-3 mt-4">
+<p class="text-on-surface-variant font-label-bold text-label-bold uppercase text-center tracking-widest">Select Difficulty</p>
+<div class="flex justify-center gap-3">
+<button class="px-6 py-2 rounded-full border border-secondary text-secondary hover:bg-secondary/10 transition-colors font-label-bold text-label-bold">
+                    Easy
+                </button>
+<button class="px-6 py-2 rounded-full bg-secondary text-on-secondary font-label-bold text-label-bold">
+                    Normal
+                </button>
+<button class="px-6 py-2 rounded-full border border-secondary text-secondary hover:bg-secondary/10 transition-colors font-label-bold text-label-bold">
+                    Hard
+                </button>
+</div>
+</div>
+<!-- Global Rank Card -->
+<div class="bg-surface-container rounded-xl mint-border p-5 flex items-center justify-between mt-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1; font-size: 32px;">trophy</span>
+<div>
+<p class="text-on-surface-variant font-label-bold text-label-bold uppercase">Current Standings</p>
+<p class="text-secondary font-title-lg text-title-lg">Your Rank: #1,482</p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-on-surface-variant font-label-bold text-label-bold uppercase">Top %</p>
+<p class="text-on-surface font-title-lg text-title-lg">Top 15%</p>
+</div>
+</div>
+<!-- CTA -->
+<div class="mt-8">
+<button class="w-full py-4 rounded-xl bg-secondary text-on-secondary font-title-lg text-title-lg hover:opacity-90 active:scale-95 transition-all duration-150">
+                Solve Today's Puzzle
+            </button>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-gutter pb-8 pt-2 bg-background/90 dark:bg-background/90 backdrop-blur-2xl border-t border-secondary/15 rounded-t-xl md:hidden">
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:text-secondary transition-colors" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-label-bold text-label-bold mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-secondary bg-secondary rounded-xl px-4 py-1 active:scale-90 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">event_upcoming</span>
+<span class="font-label-bold text-label-bold mt-1">Daily</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:text-secondary transition-colors" href="#">
+<span class="material-symbols-outlined">leaderboard</span>
+<span class="font-label-bold text-label-bold mt-1">Ranks</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:text-secondary transition-colors" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-bold text-label-bold mt-1">Profile</span>
+</a>
+</nav>
+</body></html>
