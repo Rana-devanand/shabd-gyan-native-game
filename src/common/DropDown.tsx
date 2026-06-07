@@ -80,7 +80,7 @@ const CustomDropdown: React.FC<Props> = ({
               </Text>
               <AntDesign name={open ? "up" : "down"} size={18} color="#000" />
             </View>
-            <Text style={styles.members}>{ value? value.members : 0} members</Text>
+            <Text style={styles.members}>{value ? value.members : 0} members</Text>
           </View>
         </TouchableOpacity>
 
@@ -177,9 +177,9 @@ const CustomDropdown: React.FC<Props> = ({
                 onPress={() => console.log("Create New Household")}
               >
                 <Text style={styles.createButtonText}>
-                  <AntDesign 
-                    name="plus" 
-                    size={16} 
+                  <AntDesign
+                    name="plus"
+                    size={16}
                     color={AppTheme?.lightColors?.primary} /> Create New Household
                 </Text>
               </TouchableOpacity>

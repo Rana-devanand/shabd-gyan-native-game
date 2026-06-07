@@ -5,8 +5,8 @@ import { useForm } from "react-hook-form";
 import { Platform, StyleSheet, TouchableOpacity, View } from "react-native";
 import * as Yup from "yup";
 import //   useResetPasswordMutation,
-//   useVerfiyInvitationMutation,
-"@/src/services/api";
+  //   useVerfiyInvitationMutation,
+  "@/src/services/api";
 import AuthWrapper from "../common/AuthWrapper";
 import { AppTheme } from "@/src/constants/Colors";
 import CustomInput from "../common/CustomInput";
@@ -21,8 +21,8 @@ type FormData = {
   token: string | undefined;
   email?: string;
 } & (
-  | { type: "invite"; email: string } // email is required when type is "invite"
-  | { type: "reset-password" }); // email is optional when type is "reset-password"
+    | { type: "invite"; email: string } // email is required when type is "invite"
+    | { type: "reset-password" }); // email is optional when type is "reset-password"
 
 const schema = Yup.object().shape({
   password: Yup.string().min(8).required("Password is required"),
@@ -108,7 +108,7 @@ const ResetPassword = () => {
   //   };
 
   const onSubmitForm = () => {
-      console.log(type)
+    console.log(type)
     if (type === "reset-password") {
       Toast.show({
         type: "success",
@@ -213,11 +213,11 @@ const ResetPassword = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: Platform.OS === "android" ? 100 : 0,
+    marginTop: 0,
   },
   backButton: {
     position: "absolute",
-    top: Platform.OS === "android" ? 60 : 10,
+    top: 10,
     left: 25,
   },
   title: {

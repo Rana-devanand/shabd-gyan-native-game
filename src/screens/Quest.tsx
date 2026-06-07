@@ -5,9 +5,9 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   Dimensions,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTheme, useThemeMode } from "@rneui/themed";
 import { LinearGradient } from "expo-linear-gradient";
@@ -103,189 +103,195 @@ export default function QuestScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeContainer, { backgroundColor: theme.colors.background }]}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        
-        {/* Header Title */}
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: textColor }]}>क्वेस्ट मिशन ⚔️</Text>
-          <Text style={[styles.subtitle, { color: subTextColor }]}>MISSION BOARD</Text>
+<SafeAreaView style={[styles.safeContainer, { backgroundColor: theme.colors.background }]}>
+  <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+    
+    {/* Header Title */}
+    <View style={styles.header}>
+      <Text style={[styles.title, { color: textColor }]}>Quest Missions ⚔️</Text>
+      <Text style={[styles.subtitle, { color: subTextColor }]}>MISSION BOARD</Text>
+    </View>
+
+    {/* Narrative Banner */}
+    <LinearGradient
+      colors={["#4F46E5", "#3B82F6"]}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.narrativeBanner}
+    >
+      <View style={styles.narrativeContent}>
+        <Text style={styles.narrativeTitle}>The Devgiri Expedition 🧭</Text>
+        <Text style={styles.narrativeText}>
+          A hidden temple has been discovered in the ruins of Devgiri! Decipher the ancient scripts below to unlock the secret chambers.
+        </Text>
+      </View>
+    </LinearGradient>
+
+    {/* Quests Listing */}
+    <View style={styles.section}>
+      <Text style={[styles.sectionTitle, { color: textColor }]}>Active Quests</Text>
+      
+      {/* Quest 1 */}
+      <View style={[styles.questCard, { backgroundColor: cardBg, borderColor }]}>
+        <View style={styles.questHeader}>
+          <View style={styles.questHeaderLeft}>
+            <View style={[styles.iconBox, { backgroundColor: "rgba(59, 130, 246, 0.1)" }]}>
+              <Ionicons name="calendar-outline" size={24} color="#3B82F6" />
+            </View>
+            <View>
+              <Text style={[styles.questTitle, { color: textColor }]}>Daily Warrior</Text>
+              <Text style={[styles.questDesc, { color: subTextColor }]}>Complete today's challenge</Text>
+            </View>
+          </View>
+          <Text style={styles.questXP}>+150 XP</Text>
         </View>
-
-        {/* Narrative Banner */}
-        <LinearGradient
-          colors={["#4F46E5", "#3B82F6"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.narrativeBanner}
-        >
-          <View style={styles.narrativeContent}>
-            <Text style={styles.narrativeTitle}>The Devgiri Expedition 🧭</Text>
-            <Text style={styles.narrativeText}>
-              Devgiri ke kh खंडहरों (ruins) mein ek gupt mandir mila hai! Decipher the ancient scripts below to unlock the hidden chambers.
-            </Text>
+        <View style={styles.progressRow}>
+          <View style={styles.progressOuter}>
+            <View style={[styles.progressInner, { width: `${quest1Progress * 100}%`, backgroundColor: "#3B82F6" }]} />
           </View>
-        </LinearGradient>
-
-        {/* Quests Listing */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: textColor }]}>Active Quests</Text>
-          
-          {/* Quest 1 */}
-          <View style={[styles.questCard, { backgroundColor: cardBg, borderColor }]}>
-            <View style={styles.questHeader}>
-              <View style={styles.questHeaderLeft}>
-                <View style={[styles.iconBox, { backgroundColor: "rgba(59, 130, 246, 0.1)" }]}>
-                  <Ionicons name="calendar-outline" size={24} color="#3B82F6" />
-                </View>
-                <View>
-                  <Text style={[styles.questTitle, { color: textColor }]}>Daily Warrior</Text>
-                  <Text style={[styles.questDesc, { color: subTextColor }]}>Complete today's challenge</Text>
-                </View>
-              </View>
-              <Text style={styles.questXP}>+150 XP</Text>
-            </View>
-            <View style={styles.progressRow}>
-              <View style={styles.progressOuter}>
-                <View style={[styles.progressInner, { width: `${quest1Progress * 100}%`, backgroundColor: "#3B82F6" }]} />
-              </View>
-              <Text style={[styles.progressText, { color: textColor }]}>{quest1Progress}/1</Text>
-            </View>
-            {quest1Progress >= 1 ? (
-              <View style={styles.completedBadge}>
-                <Ionicons name="checkmark-circle" size={16} color="#10B981" />
-                <Text style={styles.completedText}>Completed</Text>
-              </View>
-            ) : (
-              <TouchableOpacity
-                onPress={() => router.push("/")}
-                style={[styles.actionBtn, { backgroundColor: "#3B82F6" }]}
-              >
-                <Text style={styles.actionBtnText}>Go Play</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Quest 2 */}
-          <View style={[styles.questCard, { backgroundColor: cardBg, borderColor }]}>
-            <View style={styles.questHeader}>
-              <View style={styles.questHeaderLeft}>
-                <View style={[styles.iconBox, { backgroundColor: "rgba(16, 185, 129, 0.1)" }]}>
-                  <Ionicons name="trophy-outline" size={24} color="#10B981" />
-                </View>
-                <View>
-                  <Text style={[styles.questTitle, { color: textColor }]}>Decipher Scroll</Text>
-                  <Text style={[styles.questDesc, { color: subTextColor }]}>Solve 2 puzzles in any category</Text>
-                </View>
-              </View>
-              <Text style={styles.questXP}>+200 XP</Text>
-            </View>
-            <View style={styles.progressRow}>
-              <View style={styles.progressOuter}>
-                <View style={[styles.progressInner, { width: `${(quest2Progress / 2) * 100}%`, backgroundColor: "#10B981" }]} />
-              </View>
-              <Text style={[styles.progressText, { color: textColor }]}>{quest2Progress}/2</Text>
-            </View>
-            {quest2Progress >= 2 ? (
-              <View style={styles.completedBadge}>
-                <Ionicons name="checkmark-circle" size={16} color="#10B981" />
-                <Text style={styles.completedText}>Completed</Text>
-              </View>
-            ) : (
-              <TouchableOpacity
-                onPress={() => router.push("/")}
-                style={[styles.actionBtn, { backgroundColor: "#10B981" }]}
-              >
-                <Text style={styles.actionBtnText}>Go Solve</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Quest 3 */}
-          <View style={[styles.questCard, { backgroundColor: cardBg, borderColor }]}>
-            <View style={styles.questHeader}>
-              <View style={styles.questHeaderLeft}>
-                <View style={[styles.iconBox, { backgroundColor: "rgba(245, 158, 11, 0.1)" }]}>
-                  <Ionicons name="flash-outline" size={24} color="#F59E0B" />
-                </View>
-                <View>
-                  <Text style={[styles.questTitle, { color: textColor }]}>High Score Hunt</Text>
-                  <Text style={[styles.questDesc, { color: subTextColor }]}>Earn a total of 300 points</Text>
-                </View>
-              </View>
-              <Text style={styles.questXP}>+300 XP</Text>
-            </View>
-            <View style={styles.progressRow}>
-              <View style={styles.progressOuter}>
-                <View style={[styles.progressInner, { width: `${(quest3Progress / 3) * 100}%`, backgroundColor: "#F59E0B" }]} />
-              </View>
-              <Text style={[styles.progressText, { color: textColor }]}>{quest3Progress}/3</Text>
-            </View>
-            {quest3Progress >= 3 ? (
-              <View style={styles.completedBadge}>
-                <Ionicons name="checkmark-circle" size={16} color="#10B981" />
-                <Text style={styles.completedText}>Completed</Text>
-              </View>
-            ) : (
-              <TouchableOpacity
-                onPress={() => router.push("/")}
-                style={[styles.actionBtn, { backgroundColor: "#F59E0B" }]}
-              >
-                <Text style={styles.actionBtnText}>Earn XP</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+          <Text style={[styles.progressText, { color: textColor }]}>{quest1Progress}/1</Text>
         </View>
-
-        {/* Bonus Quest Chest */}
-        <View style={[styles.chestCard, { backgroundColor: cardBg, borderColor }]}>
-          <MaterialCommunityIcons
-            name={claimedBonus ? "treasure-chest" : completedQuestsCount === 3 ? "treasure-chest" : "lock"}
-            size={72}
-            color={claimedBonus ? "#10B981" : completedQuestsCount === 3 ? "#FBBF24" : subTextColor}
-          />
-          <Text style={[styles.chestTitle, { color: textColor }]}>
-            {claimedBonus ? "Bonus Claimed! 🎉" : completedQuestsCount === 3 ? "Secret Chest Ready! 🎁" : "Secret Chest Locked 🔒"}
-          </Text>
-          <Text style={[styles.chestDesc, { color: subTextColor }]}>
-            {claimedBonus ? "Kal firse naye quests aayenge!" : "Unlock this chest to receive a bonus +500 XP reward after completing all three quests."}
-          </Text>
+        {quest1Progress >= 1 ? (
+          <View style={styles.completedBadge}>
+            <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+            <Text style={styles.completedText}>Completed</Text>
+          </View>
+        ) : (
           <TouchableOpacity
-            disabled={completedQuestsCount < 3 || claimedBonus}
-            onPress={handleClaimChest}
-            style={[
-              styles.chestBtn,
-              {
-                backgroundColor: claimedBonus
-                  ? "rgba(16, 185, 129, 0.15)"
-                  : completedQuestsCount === 3
-                  ? "#F59E0B"
-                  : isDark
-                  ? "#072C50"
-                  : "#E2E8F0",
-              },
-            ]}
+            onPress={() => router.push("/")}
+            style={[styles.actionBtn, { backgroundColor: "#3B82F6" }]}
           >
-            <Text
-              style={[
-                styles.chestBtnText,
-                {
-                  color: claimedBonus
-                    ? "#10B981"
-                    : completedQuestsCount === 3
-                    ? "#FFFFFF"
-                    : subTextColor,
-                },
-              ]}
-            >
-              {claimedBonus ? "Claimed" : "Open Secret Chest 🔑"}
-            </Text>
+            <Text style={styles.actionBtnText}>Go Play</Text>
           </TouchableOpacity>
-        </View>
+        )}
+      </View>
 
-        <View style={{ height: 60 }} />
-      </ScrollView>
-    </SafeAreaView>
+      {/* Quest 2 */}
+      <View style={[styles.questCard, { backgroundColor: cardBg, borderColor }]}>
+        <View style={styles.questHeader}>
+          <View style={styles.questHeaderLeft}>
+            <View style={[styles.iconBox, { backgroundColor: "rgba(16, 185, 129, 0.1)" }]}>
+              <Ionicons name="trophy-outline" size={24} color="#10B981" />
+            </View>
+            <View>
+              <Text style={[styles.questTitle, { color: textColor }]}>Decipher Scroll</Text>
+              <Text style={[styles.questDesc, { color: subTextColor }]}>Solve 2 puzzles in any category</Text>
+            </View>
+          </View>
+          <Text style={styles.questXP}>+200 XP</Text>
+        </View>
+        <View style={styles.progressRow}>
+          <View style={styles.progressOuter}>
+            <View style={[styles.progressInner, { width: `${(quest2Progress / 2) * 100}%`, backgroundColor: "#10B981" }]} />
+          </View>
+          <Text style={[styles.progressText, { color: textColor }]}>{quest2Progress}/2</Text>
+        </View>
+        {quest2Progress >= 2 ? (
+          <View style={styles.completedBadge}>
+            <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+            <Text style={styles.completedText}>Completed</Text>
+          </View>
+        ) : (
+          <TouchableOpacity
+            onPress={() => router.push("/")}
+            style={[styles.actionBtn, { backgroundColor: "#10B981" }]}
+          >
+            <Text style={styles.actionBtnText}>Go Solve</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {/* Quest 3 */}
+      <View style={[styles.questCard, { backgroundColor: cardBg, borderColor }]}>
+        <View style={styles.questHeader}>
+          <View style={styles.questHeaderLeft}>
+            <View style={[styles.iconBox, { backgroundColor: "rgba(245, 158, 11, 0.1)" }]}>
+              <Ionicons name="flash-outline" size={24} color="#F59E0B" />
+            </View>
+            <View>
+              <Text style={[styles.questTitle, { color: textColor }]}>High Score Hunt</Text>
+              <Text style={[styles.questDesc, { color: subTextColor }]}>Earn a total of 300 points</Text>
+            </View>
+          </View>
+          <Text style={styles.questXP}>+300 XP</Text>
+        </View>
+        <View style={styles.progressRow}>
+          <View style={styles.progressOuter}>
+            <View style={[styles.progressInner, { width: `${(quest3Progress / 3) * 100}%`, backgroundColor: "#F59E0B" }]} />
+          </View>
+          <Text style={[styles.progressText, { color: textColor }]}>{quest3Progress}/3</Text>
+        </View>
+        {quest3Progress >= 3 ? (
+          <View style={styles.completedBadge}>
+            <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+            <Text style={styles.completedText}>Completed</Text>
+          </View>
+        ) : (
+          <TouchableOpacity
+            onPress={() => router.push("/")}
+            style={[styles.actionBtn, { backgroundColor: "#F59E0B" }]}
+          >
+            <Text style={styles.actionBtnText}>Earn XP</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
+
+    {/* Bonus Quest Chest */}
+    <View style={[styles.chestCard, { backgroundColor: cardBg, borderColor }]}>
+      <MaterialCommunityIcons
+        name={claimedBonus ? "treasure-chest" : completedQuestsCount === 3 ? "treasure-chest" : "lock"}
+        size={72}
+        color={claimedBonus ? "#10B981" : completedQuestsCount === 3 ? "#FBBF24" : subTextColor}
+      />
+      <Text style={[styles.chestTitle, { color: textColor }]}>
+        {claimedBonus
+          ? "Bonus Claimed! 🎉"
+          : completedQuestsCount === 3
+          ? "Secret Chest Ready! 🎁"
+          : "Secret Chest Locked 🔒"}
+      </Text>
+      <Text style={[styles.chestDesc, { color: subTextColor }]}>
+        {claimedBonus
+          ? "New quests will arrive tomorrow!"
+          : "Unlock this chest to receive a bonus +500 XP reward after completing all three quests."}
+      </Text>
+      <TouchableOpacity
+        disabled={completedQuestsCount < 3 || claimedBonus}
+        onPress={handleClaimChest}
+        style={[
+          styles.chestBtn,
+          {
+            backgroundColor: claimedBonus
+              ? "rgba(16, 185, 129, 0.15)"
+              : completedQuestsCount === 3
+              ? "#F59E0B"
+              : isDark
+              ? "#072C50"
+              : "#E2E8F0",
+          },
+        ]}
+      >
+        <Text
+          style={[
+            styles.chestBtnText,
+            {
+              color: claimedBonus
+                ? "#10B981"
+                : completedQuestsCount === 3
+                ? "#FFFFFF"
+                : subTextColor,
+            },
+          ]}
+        >
+          {claimedBonus ? "Claimed" : "Open Secret Chest 🔑"}
+        </Text>
+      </TouchableOpacity>
+    </View>
+
+    <View style={{ height: 60 }} />
+  </ScrollView>
+</SafeAreaView>
   );
 }
 

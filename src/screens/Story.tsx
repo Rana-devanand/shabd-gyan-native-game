@@ -5,9 +5,9 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   Dimensions,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTheme, useThemeMode } from "@rneui/themed";
 import { LinearGradient } from "expo-linear-gradient";
@@ -27,13 +27,12 @@ interface Chapter {
   difficulty: string;
   emoji: string;
 }
-
 const CHAPTERS: Chapter[] = [
   {
     id: 1,
     title: "The Golden Brew",
-    hindiTitle: "अध्याय १: दिव्य पेय की खोज",
-    narrative: "Shabdpur village ke buzurgo ne aapse kaha ki swarn lekhni (golden quill) tak pahunchne ke liye sabse pehle aapko subah ka garam divya ras peena hoga. Decipher this brew to start your adventure!",
+    hindiTitle: "Chapter 1: The Search for the Divine Drink",
+    narrative: "The elders of Shabdpur Village have told you that to reach the Golden Quill, you must first drink a warm sacred brew at dawn. Decipher this drink to begin your adventure!",
     puzzleId: "food_1", // TEA
     category: "Fruits & Food",
     difficulty: "Easy",
@@ -42,8 +41,8 @@ const CHAPTERS: Chapter[] = [
   {
     id: 2,
     title: "Forest of Echoes",
-    hindiTitle: "अध्याय २: गूंजता हुआ जंगल",
-    narrative: "Forest of Echoes ka rasta sookha aur banjar hai. Aage badhne ke liye aakash se paani barsana hoga jo dharati ki pyaas bujha sake. Call the droplets down!",
+    hindiTitle: "Chapter 2: The Echoing Forest",
+    narrative: "The path through the Forest of Echoes is dry and barren. To move forward, you must bring water down from the sky to quench the thirst of the land. Call the droplets down!",
     puzzleId: "nature_2", // RAIN
     category: "Nature",
     difficulty: "Medium",
@@ -52,8 +51,8 @@ const CHAPTERS: Chapter[] = [
   {
     id: 3,
     title: "Lamps of Guidance",
-    hindiTitle: "अध्याय ३: मार्गदर्शन के दीये",
-    narrative: "Rasta bilkul andhera ho chuka hai aur andhere mein aage badhna khatarnak hai. Swarn Lekhni tak pahunchne ke liye diye jalayein aur roshni failayein!",
+    hindiTitle: "Chapter 3: Lamps of Guidance",
+    narrative: "The road ahead has become completely dark, making the journey dangerous. To continue toward the Golden Quill, light the lamps and spread their glow!",
     puzzleId: "fest_2", // DIWALI
     category: "Festivals",
     difficulty: "Hard",
@@ -62,8 +61,8 @@ const CHAPTERS: Chapter[] = [
   {
     id: 4,
     title: "The Final Vault",
-    hindiTitle: "अध्याय ४: अंतिम तिजोरी",
-    narrative: "Aap aakhri kaksh (vault) mein pahunch chuke hain. Lekin lekhni ek adrishya shakti ke peeche band hai. Sabse hard aur chamkila ratna yahan sthapit karein taaki shakti kaant ho sake!",
+    hindiTitle: "Chapter 4: The Final Vault",
+    narrative: "You have reached the final vault. However, the Golden Quill is sealed behind an invisible force. Place the hardest and most brilliant gemstone here to shatter the barrier and claim your prize!",
     puzzleId: "precious_2", // DIAMOND
     category: "Precious Things",
     difficulty: "Super Hard",
@@ -126,102 +125,102 @@ export default function StoryScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safeContainer, { backgroundColor: theme.colors.background }]}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        
-        {/* Header Section */}
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: textColor }]}>कथा संग्रह 📖</Text>
-          <Text style={[styles.subtitle, { color: subTextColor }]}>STORY MODE</Text>
-        </View>
+<SafeAreaView style={[styles.safeContainer, { backgroundColor: theme.colors.background }]}>
+  <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+    
+    {/* Header Section */}
+    <View style={styles.header}>
+      <Text style={[styles.title, { color: textColor }]}>Story Collection</Text>
+      <Text style={[styles.subtitle, { color: subTextColor }]}>STORY MODE</Text>
+    </View>
 
-        {/* Narrative Intro */}
-        <LinearGradient
-          colors={["#7E57C2", "#3F51B5"]}
-          style={styles.narrativeIntro}
-        >
-          <Text style={styles.introHeading}>The Golden Quill Legend 📜</Text>
-          <Text style={styles.introText}>
-            Shabdpur ke prachin mandir mein ek swarn lekhni rakhi hai. Us lekhni se likha har shabd sach ho jata hai. Aage badhein aur kahani ke har rahasya ko suljhayein!
-          </Text>
-        </LinearGradient>
+    {/* Narrative Intro */}
+    <LinearGradient
+      colors={["#7E57C2", "#3F51B5"]}
+      style={styles.narrativeIntro}
+    >
+      <Text style={styles.introHeading}>The Golden Quill Legend 📜</Text>
+      <Text style={styles.introText}>
+        Deep within the ancient temple of Shabdpur lies a Golden Quill. Every word written with this quill becomes reality. Move forward and uncover the mysteries hidden throughout the story!
+      </Text>
+    </LinearGradient>
 
-        {/* Chapter List */}
-        <View style={styles.chapterSection}>
-          {CHAPTERS.map((ch) => {
-            const unlocked = isChapterUnlocked(ch);
-            const solved = isChapterSolved(ch);
-            const isActive = activeChapter?.id === ch.id;
+    {/* Chapter List */}
+    <View style={styles.chapterSection}>
+      {CHAPTERS.map((ch) => {
+        const unlocked = isChapterUnlocked(ch);
+        const solved = isChapterSolved(ch);
+        const isActive = activeChapter?.id === ch.id;
 
-            return (
-              <View
-                key={ch.id}
-                style={[
-                  styles.chapterCardWrapper,
-                  {
-                    backgroundColor: cardBg,
-                    borderColor: solved ? "#10B981" : unlocked ? "#7E57C2" : borderColor,
-                    borderWidth: unlocked ? 1.8 : 1,
-                    opacity: unlocked ? 1.0 : 0.6,
-                  },
-                ]}
-              >
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  disabled={!unlocked}
-                  onPress={() => {
-                    try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch(e){}
-                    setActiveChapter(isActive ? null : ch);
-                  }}
-                  style={styles.chapterTouch}
-                >
-                  <View style={styles.chapterMainRow}>
-                    <View style={styles.chapterHeaderLeft}>
-                      <View style={[styles.emojiBox, { backgroundColor: solved ? "rgba(16, 185, 129, 0.1)" : unlocked ? "rgba(126, 87, 194, 0.1)" : "rgba(148, 163, 184, 0.1)" }]}>
-                        <Text style={styles.emojiText}>{unlocked ? ch.emoji : "🔒"}</Text>
-                      </View>
-                      <View>
-                        <Text style={[styles.hindiTitleText, { color: textColor }]}>{ch.hindiTitle}</Text>
-                        <Text style={[styles.chapterNameText, { color: subTextColor }]}>{ch.title}</Text>
-                      </View>
-                    </View>
-
-                    {/* Status Badge */}
-                    {solved ? (
-                      <View style={styles.solvedBadge}>
-                        <Ionicons name="checkmark-done" size={12} color="#10B981" />
-                        <Text style={styles.solvedText}>SOLVED</Text>
-                      </View>
-                    ) : unlocked ? (
-                      <Ionicons name="chevron-down" size={20} color={theme.colors.primary} />
-                    ) : (
-                      <Ionicons name="lock-closed" size={16} color={subTextColor} />
-                    )}
+        return (
+          <View
+            key={ch.id}
+            style={[
+              styles.chapterCardWrapper,
+              {
+                backgroundColor: cardBg,
+                borderColor: solved ? "#10B981" : unlocked ? "#7E57C2" : borderColor,
+                borderWidth: unlocked ? 1.8 : 1,
+                opacity: unlocked ? 1.0 : 0.6,
+              },
+            ]}
+          >
+            <TouchableOpacity
+              activeOpacity={0.8}
+              disabled={!unlocked}
+              onPress={() => {
+                try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch(e){}
+                setActiveChapter(isActive ? null : ch);
+              }}
+              style={styles.chapterTouch}
+            >
+              <View style={styles.chapterMainRow}>
+                <View style={styles.chapterHeaderLeft}>
+                  <View style={[styles.emojiBox, { backgroundColor: solved ? "rgba(16, 185, 129, 0.1)" : unlocked ? "rgba(126, 87, 194, 0.1)" : "rgba(148, 163, 184, 0.1)" }]}>
+                    <Text style={styles.emojiText}>{unlocked ? ch.emoji : "🔒"}</Text>
                   </View>
-                </TouchableOpacity>
-
-                {/* Dropdown Narrative Details */}
-                {isActive && unlocked && (
-                  <View style={[styles.detailsContainer, { borderTopColor: borderColor }]}>
-                    <Text style={[styles.narrativeDescText, { color: textColor }]}>{ch.narrative}</Text>
-                    <TouchableOpacity
-                      onPress={() => handlePlayChapter(ch)}
-                      style={[styles.playBtn, { backgroundColor: solved ? "rgba(16, 185, 129, 0.15)" : "#7E57C2", borderColor: solved ? "#10B981" : "transparent", borderWidth: solved ? 1 : 0 }]}
-                    >
-                      <Text style={[styles.playBtnText, { color: solved ? "#10B981" : "#FFFFFF" }]}>
-                        {solved ? "Replay Chapter Clue 🔄" : "Solve Chapter Clue 🔑"}
-                      </Text>
-                    </TouchableOpacity>
+                  <View>
+                    <Text style={[styles.hindiTitleText, { color: textColor }]}>{ch.hindiTitle}</Text>
+                    <Text style={[styles.chapterNameText, { color: subTextColor }]}>{ch.title}</Text>
                   </View>
+                </View>
+
+                {/* Status Badge */}
+                {solved ? (
+                  <View style={styles.solvedBadge}>
+                    <Ionicons name="checkmark-done" size={12} color="#10B981" />
+                    <Text style={styles.solvedText}>SOLVED</Text>
+                  </View>
+                ) : unlocked ? (
+                  <Ionicons name="chevron-down" size={20} color={theme.colors.primary} />
+                ) : (
+                  <Ionicons name="lock-closed" size={16} color={subTextColor} />
                 )}
               </View>
-            );
-          })}
-        </View>
+            </TouchableOpacity>
 
-        <View style={{ height: 60 }} />
-      </ScrollView>
-    </SafeAreaView>
+            {/* Dropdown Narrative Details */}
+            {isActive && unlocked && (
+              <View style={[styles.detailsContainer, { borderTopColor: borderColor }]}>
+                <Text style={[styles.narrativeDescText, { color: textColor }]}>{ch.narrative}</Text>
+                <TouchableOpacity
+                  onPress={() => handlePlayChapter(ch)}
+                  style={[styles.playBtn, { backgroundColor: solved ? "rgba(16, 185, 129, 0.15)" : "#7E57C2", borderColor: solved ? "#10B981" : "transparent", borderWidth: solved ? 1 : 0 }]}
+                >
+                  <Text style={[styles.playBtnText, { color: solved ? "#10B981" : "#FFFFFF" }]}>
+                    {solved ? "Replay Chapter Clue 🔄" : "Solve Chapter Clue 🔑"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        );
+      })}
+    </View>
+
+    <View style={{ height: 60 }} />
+  </ScrollView>
+</SafeAreaView>
   );
 }
 

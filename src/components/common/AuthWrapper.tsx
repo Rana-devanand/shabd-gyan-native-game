@@ -3,7 +3,6 @@ import { Image } from "expo-image";
 import React from "react";
 import {
   ImageBackground,
-  SafeAreaView,
   ScrollView,
   View,
   StyleSheet,
@@ -11,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 interface AuthWrapperProps {
   children: React.ReactNode;
@@ -19,27 +19,30 @@ interface AuthWrapperProps {
 }
 
 const AuthWrapper = ({ children, title, subtitle }: AuthWrapperProps) => {
+  const insets = useSafeAreaInsets();
+
   return (
     <ImageBackground
-      source={require("@/assets/images/png/commonBg.png")}
+      source={require("@/assets/images/adaptive-icon.png")}
       style={styles.background}
     >
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <SafeAreaView style={{ flex: 1 }}>
+        <View style={{ flex: 1, paddingTop: insets.top }}>
           <ScrollView
             contentContainerStyle={styles.scrollViewContent}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
           >
             <View style={styles.container}>
               <View style={styles.headerBackground}>
-                <Image
+                {/* <Image
                   source={require("@/assets/images/png/app-name.png")}
                   style={styles.headerImage}
                   resizeMode="contain"
-                />
+                /> */}
               </View>
 
               <Text style={styles.title}>{title}</Text>
@@ -47,7 +50,7 @@ const AuthWrapper = ({ children, title, subtitle }: AuthWrapperProps) => {
               {children}
             </View>
           </ScrollView>
-        </SafeAreaView>
+        </View>
       </KeyboardAvoidingView>
     </ImageBackground>
   );

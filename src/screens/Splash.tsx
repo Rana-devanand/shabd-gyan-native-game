@@ -149,13 +149,13 @@ export default function SplashScreen({ onAnimationComplete }: Props) {
   const xpScale = useSharedValue(0.3);
   const taglineOpacity = useSharedValue(0);
 
-  const word1 = ["S", "H", "A", "B", "D"];
-  const word2 = ["K", "H", "E", "L"];
+  const word1 = ["W", "O", "R", "D"];
+  const word2 = ["W", "A", "L", "A"];
   const sparkleAngles = [0, 60, 120, 180, 240, 300];
 
   useEffect(() => {
     clueOpacity.value = withDelay(300, withTiming(1, { duration: 400 }));
-    
+
     // XP Pop-up scale & opacity springs
     xpOpacity.value = withDelay(1550, withTiming(1, { duration: 300 }));
     xpScale.value = withDelay(1550, withSpring(1, { damping: 9, stiffness: 100 }));
@@ -170,7 +170,7 @@ export default function SplashScreen({ onAnimationComplete }: Props) {
   }, []);
 
   const clueStyle = useAnimatedStyle(() => ({ opacity: clueOpacity.value }));
-  
+
   const xpStyle = useAnimatedStyle(() => ({
     opacity: xpOpacity.value,
     transform: [{ scale: xpScale.value }],
@@ -200,7 +200,7 @@ export default function SplashScreen({ onAnimationComplete }: Props) {
 
       {/* Clue/Hint Question */}
       <Animated.Text style={[styles.clue, clueStyle]}>
-        Hint: "Subah uthte hi peete ho ☕"
+        Hint: "Every morning you want to drink.... ☕"
       </Animated.Text>
 
       {/* Letter Grid Container (SHABD & KHEL stacked) */}
@@ -218,7 +218,7 @@ export default function SplashScreen({ onAnimationComplete }: Props) {
             <Tile key={`w2_${i}`} letter={l} delay={600 + (word1.length + i) * 85} />
           ))}
         </View>
-        
+
         {/* Sparkle explosion emitting from the center of the tiles */}
         <View style={styles.explosionCenter}>
           {sparkleAngles.map((angle, idx) => (
@@ -234,7 +234,7 @@ export default function SplashScreen({ onAnimationComplete }: Props) {
 
       {/* Tagline */}
       <Animated.Text style={[styles.tagline, taglineStyle]}>
-        CLUE PADHO • WORD BANAO
+        READ CLUE • MAKE WORD
       </Animated.Text>
 
       <Text style={styles.loading}>UNSCRAMBLING WORDS...</Text>

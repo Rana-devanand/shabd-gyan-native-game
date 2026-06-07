@@ -27,7 +27,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "food_1",
     category: "Fruits & Food",
-    clue: "Subah uthke sabse pehle yahi garam cheez chahiye hoti hai (desi chai)",
+    clue: "This hot beverage is the first thing most people want in the morning (desi tea)",
     answer: "TEA",
     decoys: ["M", "O", "S"],
     hint: "Starts with 'T' (3 letters)"
@@ -35,7 +35,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "food_2",
     category: "Fruits & Food",
-    clue: "Garmion mein sabka favourite fruit, aam ka English naam",
+    clue: "Everyone's favorite summer fruit, also known as the king of fruits in India",
     answer: "MANGO",
     decoys: ["Z", "Y", "P"],
     hint: "Starts with 'M' (5 letters)"
@@ -43,7 +43,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "food_3",
     category: "Fruits & Food",
-    clue: "Chai ke saath dip karke khane wala desi snack (parle-g type)",
+    clue: "A popular baked snack dipped in tea during snack time",
     answer: "BISCUIT",
     decoys: ["O", "P", "X"],
     hint: "Starts with 'B' (7 letters)"
@@ -51,7 +51,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "food_4",
     category: "Fruits & Food",
-    clue: "Rice aur mutton/chicken se bani shahi dish jo shadi aur daawat mein milti hai",
+    clue: "A royal dish made of rice and spiced meat served at weddings and feasts",
     answer: "BIRYANI",
     decoys: ["P", "X", "O", "T"],
     hint: "Starts with 'B' (7 letters)"
@@ -61,7 +61,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "nature_1",
     category: "Nature",
-    clue: "Subah-subah jo aakash mein chamakta hai aur dhoop deta hai",
+    clue: "The bright body that shines in the sky during the morning and provides light",
     answer: "SUN",
     decoys: ["R", "K", "V"],
     hint: "Starts with 'S' (3 letters)"
@@ -69,7 +69,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "nature_2",
     category: "Nature",
-    clue: "Aasmaan se girne wala paani jo sabko bheega deta hai (baarish)",
+    clue: "Water droplets falling from the sky that get everyone wet",
     answer: "RAIN",
     decoys: ["E", "T", "U"],
     hint: "Starts with 'R' (4 letters)"
@@ -77,7 +77,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "nature_3",
     category: "Nature",
-    clue: "Barkha rani! Is season mein sab jagah paani hi paani hota hai",
+    clue: "The rainy season when there is water and wetness everywhere",
     answer: "MONSOON",
     decoys: ["T", "L", "K"],
     hint: "Starts with 'M' (7 letters)"
@@ -85,7 +85,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "nature_4",
     category: "Nature",
-    clue: "Baarish ke baad aasmaan mein dikhne wali 7 rangon ki sunder kamaan",
+    clue: "A beautiful arch of seven colors visible in the sky after the rain",
     answer: "RAINBOW",
     decoys: ["Z", "Q", "P"],
     hint: "Starts with 'R' (7 letters)"
@@ -95,7 +95,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "fest_1",
     category: "Festivals",
-    clue: "Rang barse! Pichkari aur gujhiya wala tyohar",
+    clue: "The vibrant festival of colors celebrated with water guns and sweet treats",
     answer: "HOLI",
     decoys: ["K", "A", "E"],
     hint: "Starts with 'H' (4 letters)"
@@ -103,7 +103,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "fest_2",
     category: "Festivals",
-    clue: "Roshni ka tyohar, jismein diye jalate hain aur mithai khate hain",
+    clue: "The festival of lights when people light clay lamps and share sweets",
     answer: "DIWALI",
     decoys: ["S", "P", "K"],
     hint: "Starts with 'D' (6 letters)"
@@ -111,7 +111,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "fest_3",
     category: "Festivals",
-    clue: "Bhai-behen ka tyohar, jismein rakhi baandhi jaati hai",
+    clue: "The festival of brother-sister bond when a sacred thread is tied on the wrist",
     answer: "RAKHI",
     decoys: ["U", "N", "M"],
     hint: "Starts with 'R' (5 letters)"
@@ -119,7 +119,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "fest_4",
     category: "Festivals",
-    clue: "Ravan dahan aur burai par achhai ki jeet wala tyohar (dussehra)",
+    clue: "The festival celebrating the victory of good over evil with the burning of Ravan",
     answer: "DUSSEHRA",
     decoys: ["K", "M", "B"],
     hint: "Starts with 'D' (8 letters)"
@@ -129,7 +129,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "city_1",
     category: "City Life",
-    clue: "Mumbai ki jaan, jis pe lakhon log roz safar karte hain",
+    clue: "The lifeline of Mumbai on which millions of people commute daily",
     answer: "TRAIN",
     decoys: ["S", "E", "C"],
     hint: "Starts with 'T' (5 letters)"
@@ -137,7 +137,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "city_2",
     category: "City Life",
-    clue: "Auto wale bhaiya jis teen-pahiya gaadi se chalte hain",
+    clue: "The three-wheeled passenger vehicle commonly used by local commuters",
     answer: "AUTO",
     decoys: ["R", "B", "Z"],
     hint: "Starts with 'A' (4 letters)"
@@ -145,7 +145,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "city_3",
     category: "City Life",
-    clue: "Red, yellow aur green lights jo sadak par traffic control karti hain",
+    clue: "Red, yellow, and green lights that control traffic flow on the road",
     answer: "SIGNAL",
     decoys: ["O", "E", "K"],
     hint: "Starts with 'S' (6 letters)"
@@ -153,7 +153,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "city_4",
     category: "City Life",
-    clue: "Delhi/Noida mein chalne wali fast, ac electric train jo patariyon par chalti hai",
+    clue: "The fast, air-conditioned electric transit train running in Delhi and Noida",
     answer: "METRO",
     decoys: ["K", "W", "V"],
     hint: "Starts with 'M' (5 letters)"
@@ -163,7 +163,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "music_1",
     category: "Music & Art",
-    clue: "Saraswati maa ke haath mein kaunsa surila string instrument hota hai?",
+    clue: "Which melodious stringed musical instrument is held by Goddess Saraswati?",
     answer: "VEENA",
     decoys: ["T", "S", "W"],
     hint: "Starts with 'V' (5 letters)"
@@ -171,7 +171,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "music_2",
     category: "Music & Art",
-    clue: "Suron ka taal, gane ke piche bajne wala dhun",
+    clue: "Melodious beats and tune playing in the background of a song",
     answer: "MUSIC",
     decoys: ["T", "O", "Y"],
     hint: "Starts with 'M' (5 letters)"
@@ -179,7 +179,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "music_3",
     category: "Music & Art",
-    clue: "Bhajan aur kirtan mein bajane wali gol lakdi ki cheez",
+    clue: "A double-headed wooden drum commonly played during devotional singing",
     answer: "DHOLAK",
     decoys: ["I", "M", "S"],
     hint: "Starts with 'D' (6 letters)"
@@ -187,7 +187,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "music_4",
     category: "Music & Art",
-    clue: "Zakir Hussain sahab ka mashhoor do-pahiya drum instrument",
+    clue: "The famous pair of hand drums played by maestro Zakir Hussain",
     answer: "TABLA",
     decoys: ["Y", "G", "R"],
     hint: "Starts with 'T' (5 letters)"
@@ -197,7 +197,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "precious_1",
     category: "Precious Things",
-    clue: "Pila metal jo bahut keemti hai aur aabhushan (jewellery) banane mein kaam aata hai",
+    clue: "A valuable yellow metal highly used for making beautiful jewelry",
     answer: "GOLD",
     decoys: ["R", "E", "U"],
     hint: "Starts with 'G' (4 letters)"
@@ -205,7 +205,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "precious_2",
     category: "Precious Things",
-    clue: "Sabse hard aur chamkila ratna jo angoothi (ring) mein lagta hai (heera)",
+    clue: "The hardest and most brilliant precious stone often set in rings",
     answer: "DIAMOND",
     decoys: ["X", "Y", "P"],
     hint: "Starts with 'D' (7 letters)"
@@ -213,7 +213,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "precious_3",
     category: "Precious Things",
-    clue: "Samundar ki seep (oyster) se nikalne wala safed gol moti",
+    clue: "A smooth, white, round gem harvested from ocean oysters",
     answer: "PEARL",
     decoys: ["K", "C", "Z"],
     hint: "Starts with 'P' (5 letters)"
@@ -221,7 +221,7 @@ export const PUZZLES: Puzzle[] = [
   {
     id: "precious_4",
     category: "Precious Things",
-    clue: "Safed chamkili metal jisse payal aur chandi ke bartan bante hain",
+    clue: "A shiny white metal used to make anklets and traditional tableware",
     answer: "SILVER",
     decoys: ["X", "M", "O"],
     hint: "Starts with 'S' (6 letters)"
@@ -233,7 +233,7 @@ export const PAHELI_PUZZLES: Puzzle[] = [
   {
     id: "paheli_food_1",
     category: "Fruits & Food",
-    clue: "Lal dabba, peele dane, jo khaye woh swad pehchane? (Anaar)",
+    clue: "Red box filled with juicy sweet seeds, a delicious fruit that tastes sweet? (Pomegranate)",
     answer: "POMEGRANATE",
     decoys: ["X", "Y", "W"],
     hint: "Starts with P (11 letters)"
@@ -241,7 +241,7 @@ export const PAHELI_PUZZLES: Puzzle[] = [
   {
     id: "paheli_food_2",
     category: "Fruits & Food",
-    clue: "Kala muh aur peeli deh, sardi mein sabhi ko suhaye? (Mungfali)",
+    clue: "Black face and yellow body, a warm nut that everyone loves in winter? (Peanut)",
     answer: "PEANUT",
     decoys: ["L", "Z", "O"],
     hint: "Starts with P (6 letters)"
@@ -251,7 +251,7 @@ export const PAHELI_PUZZLES: Puzzle[] = [
   {
     id: "paheli_nature_1",
     category: "Nature",
-    clue: "Ek thaal motiyon se bhara, sabke sir par aundha dhara? (Aasmaan/Taare)",
+    clue: "A plate full of shining pearls, turned upside down over everyone's head? (Sky/Stars)",
     answer: "SKY",
     decoys: ["T", "P", "R"],
     hint: "Starts with S (3 letters)"
@@ -259,7 +259,7 @@ export const PAHELI_PUZZLES: Puzzle[] = [
   {
     id: "paheli_nature_2",
     category: "Nature",
-    clue: "Ek paheli bujhu re bhai, jitna kaato utni badhai? (Nail/Nakhun)",
+    clue: "Solve this riddle, brother: the more you cut it, the more it grows? (Nails)",
     answer: "NAIL",
     decoys: ["E", "P", "Q"],
     hint: "Starts with N (4 letters)"
@@ -269,7 +269,7 @@ export const PAHELI_PUZZLES: Puzzle[] = [
   {
     id: "paheli_fest_1",
     category: "Festivals",
-    clue: "Ravan dahan aur burai par achhai ki jeet wala tyohar? (dussehra)",
+    clue: "The festival celebrating the victory of good over evil and the burning of Ravan? (Dussehra)",
     answer: "DUSSEHRA",
     decoys: ["K", "M", "B"],
     hint: "Starts with D (8 letters)"
@@ -279,7 +279,7 @@ export const PAHELI_PUZZLES: Puzzle[] = [
   {
     id: "paheli_city_1",
     category: "City Life",
-    clue: "Char pahiye hain uske, sadak par daude dhum-dhadaka? (Car)",
+    clue: "It has four wheels and speeds down the road with a roar? (Car)",
     answer: "CAR",
     decoys: ["T", "V", "W"],
     hint: "Starts with C (3 letters)"
@@ -289,7 +289,7 @@ export const PAHELI_PUZZLES: Puzzle[] = [
   {
     id: "paheli_music_1",
     category: "Music & Art",
-    clue: "Suron ka raja, phoonk marne par bajne wala baas ka instrument? (Bansuri)",
+    clue: "The king of tunes, a hollow bamboo instrument played by blowing air? (Flute)",
     answer: "FLUTE",
     decoys: ["X", "M", "S"],
     hint: "Starts with F (5 letters)"
@@ -299,7 +299,7 @@ export const PAHELI_PUZZLES: Puzzle[] = [
   {
     id: "paheli_precious_1",
     category: "Precious Things",
-    clue: "Sone se sasta hai par chamak mein kisi se kam nahi? (Chandi)",
+    clue: "Cheaper than gold but shines no less than any other precious metal? (Silver)",
     answer: "SILVER",
     decoys: ["P", "Q", "B"],
     hint: "Starts with S (6 letters)"

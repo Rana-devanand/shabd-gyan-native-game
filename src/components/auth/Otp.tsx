@@ -51,23 +51,6 @@ const Otp = () => {
     setOtp(new Array(OTP_LENGTH).fill("")); // Clear OTP fields
   };
 
-  const handleContinue = () => {
-    const enteredOtp = otp.join("");
-    if (enteredOtp.length === OTP_LENGTH) {
-      Toast.show({
-        type: 'success',
-        text1: 'OTP Verified',
-      })
-      router.replace("/create-household");
-    } else {
-      Toast.show({
-        type: 'error',
-        text1: 'Wrong OTP',
-        text2: 'Please enter the complete OTP.'
-      })
-    }
-  };
-  
   return (
     <AuthWrapper>
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -119,14 +102,6 @@ const Otp = () => {
             </View>
           )}
         </View>
-
-        {/* --- Continue Button --- */}
-        <TouchableOpacity
-          style={styles.continueButton}
-          onPress={handleContinue}
-        >
-          <Text style={styles.continueButtonText}>Continue</Text>
-        </TouchableOpacity>
       </View>
     </AuthWrapper>
   );
@@ -134,23 +109,23 @@ const Otp = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex : 1,
-    marginTop: Platform.OS === "android" ? 140 : 50,
+    flex: 1,
+    marginTop: 20,
   },
   backButton: {
     position: "absolute",
-    top: Platform.OS === "android" ? 60 : 10,
+    top: 10,
     left: 25,
   },
   title: {
     textAlign: "center",
     lineHeight: 24,
     fontSize: 20,
-    fontFamily : "PlusJakartaSans_600SemiBold",
+    fontFamily: "PlusJakartaSans_600SemiBold",
   },
   subtitle: {
     fontSize: 16,
-    fontFamily : "PlusJakartaSans_400Regular",
+    fontFamily: "PlusJakartaSans_400Regular",
     color: AppTheme.lightColors?.grey5,
     textAlign: "center",
     marginBottom: 30,
@@ -162,7 +137,7 @@ const styles = StyleSheet.create({
   },
   otpLabel: {
     fontSize: 14,
-    fontFamily : "PlusJakartaSans_400Regular",
+    fontFamily: "PlusJakartaSans_400Regular",
     color: AppTheme.lightColors?.grey5,
     marginBottom: 8,
     alignSelf: "flex-start",
@@ -174,7 +149,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   otpInput: {
-    width: 70,
+    width: 80,
     height: 60,
     borderWidth: 1.5,
     borderColor: "#E9E9E9",
@@ -184,7 +159,7 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     backgroundColor: "#FAFAFA",
     color: AppTheme.darkColors?.black,
-    fontFamily : "PlusJakartaSans_400Regular",
+    fontFamily: "PlusJakartaSans_400Regular",
   },
   resendContainer: {
     alignSelf: "flex-end",
@@ -195,24 +170,24 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
     alignItems: "center",
   },
-  resendText:{
+  resendText: {
     color: AppTheme.lightColors?.grey5,
-    fontFamily : "PlusJakartaSans_400Regular",
+    fontFamily: "PlusJakartaSans_400Regular",
 
   },
   timerText: {
     fontSize: 14,
-    fontFamily : "PlusJakartaSans_400Regular",
+    fontFamily: "PlusJakartaSans_400Regular",
     color: AppTheme.lightColors?.grey5,
   },
   timerHighlight: {
-    fontFamily : "PlusJakartaSans_400Regular",
+    fontFamily: "PlusJakartaSans_400Regular",
     color: AppTheme.lightColors?.primary,
   },
   resendButtonText: {
     fontSize: 14,
     color: AppTheme.lightColors?.primary,
-    fontFamily : "PlusJakartaSans_600SemiBold",
+    fontFamily: "PlusJakartaSans_600SemiBold",
   },
   continueButton: {
     backgroundColor: AppTheme.lightColors?.primary,
@@ -221,8 +196,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   continueButtonText: {
-    color:  AppTheme.lightColors?.white,
-    fontFamily : "PlusJakartaSans_600SemiBold",
+    color: AppTheme.lightColors?.white,
+    fontFamily: "PlusJakartaSans_600SemiBold",
     fontWeight: "bold",
     fontSize: 18,
   },

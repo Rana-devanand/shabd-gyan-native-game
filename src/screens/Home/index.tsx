@@ -4,15 +4,16 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  SafeAreaView,
   ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme, useThemeMode } from "@rneui/themed";
 import * as Haptics from "expo-haptics";
 
-import { PUZZLES, CATEGORIES, PAHELI_PUZZLES } from "../../constants/puzzles";
+import { PUZZLES, CATEGORIES, PAHELI_PUZZLES, Puzzle } from "../../constants/puzzles";
+import { generatePuzzle } from "../../services/groqService";
 import Header from "./components/Header";
 import StreakCard from "./components/StreakCard";
 import StatsPanel from "./components/StatsPanel";
@@ -41,6 +42,8 @@ export default function Dashboard() {
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [solvedIds, setSolvedIds] = useState<string[]>([]);
+  const [groqPuzzle, setGroqPuzzle] = useState<Puzzle | null>(null);
+  const [groqLoading, setGroqLoading] = useState(false);
 
   // Active Puzzles based on gameMode
   const modePuzzles = gameMode === "shabd" ? PUZZLES : PAHELI_PUZZLES;
@@ -49,6 +52,26 @@ export default function Dashboard() {
   const activeCategories = CATEGORIES.filter(cat => 
     modePuzzles.some(p => p.category === cat.name)
   );
+
+  const fetchGroqPuzzle = async (mode: "shabd" | "paheli", currentSolvedIds?: string[]) => {
+    setGroqLoading(true);
+    try {
+      const puzzle = await generatePuzzle(mode);
+      setGroqPuzzle(puzzle);
+      const cachedKey = mode === "shabd" ? "groq_shabd_puzzle" : "groq_paheli_puzzle";
+      await AsyncStorage.setItem(cachedKey, JSON.stringify(puzzle));
+    } catch (e) {
+      console.error("[Home] Error generating Groq puzzle, falling back:", e);
+      // Fallback to first unsolved local puzzle
+      const solvedList = currentSolvedIds || solvedIds;
+      const unsolved = (mode === "shabd" ? PUZZLES : PAHELI_PUZZLES).find((p) => !solvedList.includes(p.id)) || (mode === "shabd" ? PUZZLES[0] : PAHELI_PUZZLES[0]);
+      setGroqPuzzle(unsolved);
+      const cachedKey = mode === "shabd" ? "groq_shabd_puzzle" : "groq_paheli_puzzle";
+      await AsyncStorage.setItem(cachedKey, JSON.stringify(unsolved));
+    } finally {
+      setGroqLoading(false);
+    }
+  };
 
   // Load stats and progress when screen is focused
   useFocusEffect(
@@ -60,7 +83,7 @@ export default function Dashboard() {
           const scoreStr = await AsyncStorage.getItem("shabdgyan_score");
           const streakStr = await AsyncStorage.getItem("shabdgyan_streak");
           const solvedIdsStr = await AsyncStorage.getItem("shabdgyan_solved_ids");
-          const storedMode = await AsyncStorage.getItem("shabdgyan_mode");
+          const storedMode = (await AsyncStorage.getItem("shabdgyan_mode")) as "shabd" | "paheli" || "shabd";
 
           if (storedNickname) setNickname(storedNickname);
           if (storedAvatar) setAvatar(storedAvatar);
@@ -72,7 +95,24 @@ export default function Dashboard() {
             setSolvedIds([]);
           }
           if (storedMode) {
-            setGameMode(storedMode as any);
+            setGameMode(storedMode);
+          }
+
+          // Fetch / load cached Groq puzzle
+          const cachedKey = storedMode === "shabd" ? "groq_shabd_puzzle" : "groq_paheli_puzzle";
+          const cachedPuzzleStr = await AsyncStorage.getItem(cachedKey);
+          const solvedList = JSON.parse(solvedIdsStr || "[]");
+          if (cachedPuzzleStr) {
+            const cachedPuzzle = JSON.parse(cachedPuzzleStr);
+            setGroqPuzzle(cachedPuzzle);
+
+            // If the cached Groq puzzle has already been solved, fetch a fresh one
+            if (solvedList.includes(cachedPuzzle.id)) {
+              console.log("[Home] Cached Groq puzzle already solved. Fetching new one...");
+              fetchGroqPuzzle(storedMode, solvedList);
+            }
+          } else {
+            fetchGroqPuzzle(storedMode, solvedList);
           }
         } catch (error) {
           console.error("Error loading dashboard data:", error);
@@ -87,15 +127,27 @@ export default function Dashboard() {
 
   // Play Daily Challenge Button action
   const handlePlayDailyChallenge = async () => {
-    const nextUnsolved = modePuzzles.find((p) => !solvedIds.includes(p.id)) || modePuzzles[0];
-    if (nextUnsolved) {
-      try {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      } catch (e) {}
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch (e) {}
+
+    if (groqPuzzle) {
       router.push({
         pathname: "/(authenticated)/play",
-        params: { categoryName: nextUnsolved.category, difficulty: "Easy" }
+        params: { 
+          categoryName: groqPuzzle.category, 
+          difficulty: "Easy",
+          dynamic: "true"
+        }
       });
+    } else {
+      const nextUnsolved = modePuzzles.find((p) => !solvedIds.includes(p.id)) || modePuzzles[0];
+      if (nextUnsolved) {
+        router.push({
+          pathname: "/(authenticated)/play",
+          params: { categoryName: nextUnsolved.category, difficulty: "Easy" }
+        });
+      }
     }
   };
 
@@ -131,6 +183,7 @@ export default function Dashboard() {
           textColor={textColor}
           subTextColor={subTextColor}
           borderColor={borderColor}
+          groqWord={groqPuzzle?.answer}
         />
 
         {/* Weekly Streak Tracker */}

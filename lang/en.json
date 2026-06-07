@@ -1,0 +1,62 @@
+{
+  "onboarding": {
+    "skip": "Skip",
+    "getStarted": "Get Started 🚀",
+    "slide1_title": "Word Puzzles",
+    "slide1_desc": "Read Hinglish clues and solve scrambled letter tiles to find the word!",
+    "slide2_title": "Daily Streaks",
+    "slide2_desc": "Play every day, build your streak, and earn massive bonus XP points!",
+    "slide3_title": "Leaderboards",
+    "slide3_desc": "Compete with friends and rise to the top of the global standings!"
+  },
+  "auth": {
+    "title": "SHABD KHEL",
+    "subtitle": "Read Clue, Make Word! 🧩",
+    "login": {
+      "welcome": "Welcome Back! 🎮",
+      "email": "Email Address",
+      "emailPlaceholder": "name@email.com",
+      "password": "Password",
+      "passwordPlaceholder": "Enter password",
+      "forgotPassword": "Forgot password?",
+      "submit": "Log In",
+      "orDivider": "or sign in with",
+      "googleSubmit": "Continue with Google",
+      "noAccount": "Don't have an account?",
+      "createAccount": "Create Account",
+      "emailRequired": "Email and password are required!",
+      "success": "Welcome Back! 🎮",
+      "failed": "Login failed. Please check credentials."
+    },
+    "signup": {
+      "cardTitle": "Create Account",
+      "email": "Email Address",
+      "emailPlaceholder": "name@email.com",
+      "password": "Password",
+      "passwordPlaceholder": "Min. 6 characters",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Repeat your password",
+      "submit": "Create Account",
+      "orDivider": "or sign up with",
+      "googleSubmit": "Continue with Google",
+      "haveAccount": "Already have an account?",
+      "login": "Log In",
+      "fieldsRequired": "Email and password are required!",
+      "passLength": "Password must be at least 6 characters",
+      "passMismatch": "Passwords do not match!",
+      "success": "Account created! Let's set up your profile 🎉",
+      "checkEmail": "Please check your inbox to confirm your email!"
+    },
+    "profileSetup": {
+      "title": "Set Up Your Profile",
+      "subtitle": "Choose your avatar and pick a nickname — your identity in the game!",
+      "avatarTitle": "Choose Avatar",
+      "nicknameLabel": "Enter Nickname",
+      "nicknamePlaceholder": "e.g. WordNinja ⚡",
+      "submit": "Chalo Shuru Karein! 🚀",
+      "nameLength": "Please enter a nickname (at least 2 letters)",
+      "success": "Welcome to ShabdKhel, {name}! 🎉",
+      "failed": "Failed to save profile. Please try again."
+    }
+  }
+}

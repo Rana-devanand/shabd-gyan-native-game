@@ -11,7 +11,9 @@ import {
   TextInput,
   Modal,
   Dimensions,
+  Image,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { showMessage } from "react-native-flash-message";
@@ -20,6 +22,10 @@ import { resetTokens } from "../store/actions/authActions";
 import { useTheme, useThemeMode } from "@rneui/themed";
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import { supabase } from "../Supabase/client";
+import AvatarDisplay from "../common/AvatarDisplay";
+import { useMusic } from "../context/MusicContext";
+
 
 const { width } = Dimensions.get("window");
 
@@ -32,17 +38,12 @@ interface HistoryItem {
   solvedAt: string;
 }
 
+const BOY_IMAGE = require("../../assets/avatar/boy.jpg");
+const GIRL_IMAGE = require("../../assets/avatar/girl.jpg");
+
 const AVATARS = [
-  { emoji: "🧔🏽‍♂️", label: "Bhaiya" },
-  { emoji: "👩🏽‍🦱", label: "Didi" },
-  { emoji: "🦁", label: "Sher" },
-  { emoji: "🦚", label: "Peacock" },
-  { emoji: "🏏", label: "Cricketer" },
-  { emoji: "☕", label: "Chai Lover" },
-  { emoji: "🥻", label: "Desi Queen" },
-  { emoji: "🦊", label: "Lomdi" },
-  { emoji: "🎨", label: "Artist" },
-  { emoji: "🚀", label: "Rider" }
+  { id: "boy", image: BOY_IMAGE, label: "Boy", gender: "Male" },
+  { id: "girl", image: GIRL_IMAGE, label: "Girl", gender: "Female" }
 ];
 
 export default function Profile() {
@@ -61,13 +62,16 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [nickname, setNickname] = useState("Player");
   const [avatar, setAvatar] = useState("🧔🏽‍♂️");
+  const [age, setAge] = useState("");
+  const [gender, setGender] = useState("");
+  const [country, setCountry] = useState("");
   const [totalScore, setTotalScore] = useState(0);
   const [maxStreak, setMaxStreak] = useState(0);
   const [solvedCount, setSolvedCount] = useState(0);
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
   // User Settings State
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const { soundEnabled, setSoundEnabled } = useMusic();
   const [difficulty, setDifficulty] = useState("Medium");
   const [langPreference, setLangPreference] = useState("Hinglish");
 
@@ -95,12 +99,20 @@ export default function Profile() {
           // Settings
           const storedSound = await AsyncStorage.getItem("game_sound_enabled");
           const storedDifficulty = await AsyncStorage.getItem("game_difficulty_preference");
+          const storedLang = await AsyncStorage.getItem("game_language");
+          const storedAge = await AsyncStorage.getItem("user_age");
+          const storedGender = await AsyncStorage.getItem("user_gender");
+          const storedCountry = await AsyncStorage.getItem("user_country");
 
           if (storedNickname) setNickname(storedNickname);
           if (storedAvatar) setAvatar(storedAvatar);
+          if (storedAge) setAge(storedAge);
+          if (storedGender) setGender(storedGender);
+          if (storedCountry) setCountry(storedCountry);
+          if (storedLang) setLangPreference(storedLang);
           if (scoreStr) setTotalScore(parseInt(scoreStr, 10) || 0);
           if (maxStreakStr) setMaxStreak(parseInt(maxStreakStr, 10) || 0);
-          
+
           if (solvedIdsStr) {
             const ids = JSON.parse(solvedIdsStr);
             setSolvedCount(ids.length);
@@ -114,9 +126,7 @@ export default function Profile() {
             setHistory([]);
           }
 
-          if (storedSound !== null) {
-            setSoundEnabled(storedSound === "true");
-          }
+          // soundEnabled is managed globally by useMusic provider
           if (storedDifficulty) {
             setDifficulty(storedDifficulty);
           }
@@ -141,20 +151,47 @@ export default function Profile() {
       return;
     }
 
+    const editGender = editAvatar === "boy" ? "Male" : "Female";
+
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not logged in");
+
+      // Save to Supabase via RPC
+      const { error } = await supabase.rpc("create_profile", {
+        user_id: user.id,
+        p_nickname: editNickname.trim(),
+        p_avatar: editAvatar,
+      });
+      if (error) throw error;
+
+      // Update gender in profiles table
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ gender: editGender })
+        .eq("id", user.id);
+      if (updateError) throw updateError;
+
+      // Save to local storage
       await AsyncStorage.setItem("user_nickname", editNickname.trim());
       await AsyncStorage.setItem("user_avatar", editAvatar);
-      
+      await AsyncStorage.setItem("user_gender", editGender);
+
       setNickname(editNickname.trim());
       setAvatar(editAvatar);
+      setGender(editGender);
       setManageModalVisible(false);
 
       showMessage({
         message: "Profile updated successfully! ✨",
         type: "success",
       });
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      showMessage({
+        message: e.message || "Failed to update profile",
+        type: "danger",
+      });
     }
   };
 
@@ -167,8 +204,7 @@ export default function Profile() {
 
   // Sound toggling
   const handleToggleSound = async (value: boolean) => {
-    setSoundEnabled(value);
-    await AsyncStorage.setItem("game_sound_enabled", value ? "true" : "false");
+    await setSoundEnabled(value);
   };
 
   // Difficulty selection picker
@@ -224,6 +260,7 @@ export default function Profile() {
           text: "Yes, Sign Out",
           onPress: async () => {
             try {
+              await supabase.auth.signOut();
               await AsyncStorage.removeItem("access_token");
               await AsyncStorage.removeItem("refresh_token");
               dispatch(resetTokens());
@@ -313,7 +350,7 @@ export default function Profile() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView
         contentContainerStyle={{ paddingBottom: 40, paddingTop: 10 }}
         showsVerticalScrollIndicator={false}
@@ -321,7 +358,7 @@ export default function Profile() {
         {/* Profile Header */}
         <View style={styles.profileHeader}>
           <View style={[styles.avatarBig, { borderColor: theme.colors.primary, backgroundColor: isDark ? "#05203B" : "#F1F5F9" }]}>
-            <Text style={styles.avatarEmoji}>{avatar}</Text>
+            <AvatarDisplay avatar={avatar} size={86} textStyle={styles.avatarEmoji} />
           </View>
           <Text style={[styles.nickname, { color: textColor }]}>
             {nickname}
@@ -352,7 +389,7 @@ export default function Profile() {
         <View style={styles.sectionContainer}>
           <Text style={[styles.sectionTitle, { color: textColor }]}>Game Preferences ⚙️</Text>
           <View style={[styles.preferenceList, { backgroundColor: cardBg, borderColor }]}>
-            
+
             {/* Preference item: Sounds */}
             <View style={styles.preferenceRow}>
               <View style={styles.rowLabelGroup}>
@@ -420,11 +457,50 @@ export default function Profile() {
           </View>
         </View>
 
+        {/* Personal Information Section */}
+        <View style={styles.sectionContainer}>
+          <Text style={[styles.sectionTitle, { color: textColor }]}>Personal Information 👤</Text>
+          <View style={[styles.preferenceList, { backgroundColor: cardBg, borderColor }]}>
+
+            {/* Country */}
+            <View style={styles.preferenceRow}>
+              <View style={styles.rowLabelGroup}>
+                <Ionicons name="globe-outline" size={20} color={theme.colors.primary} />
+                <Text style={[styles.preferenceText, { color: textColor }]}>Country</Text>
+              </View>
+              <Text style={styles.valueText}>{country || "Not Set"}</Text>
+            </View>
+
+            {/* Age */}
+            <View style={styles.preferenceRow}>
+              <View style={styles.rowLabelGroup}>
+                <Ionicons name="calendar-outline" size={20} color={theme.colors.primary} />
+                <Text style={[styles.preferenceText, { color: textColor }]}>Age</Text>
+              </View>
+              <Text style={styles.valueText}>{age ? `${age} Yrs` : "Not Set"}</Text>
+            </View>
+
+            {/* Gender */}
+            <View style={[styles.preferenceRow, { borderBottomWidth: 0 }]}>
+              <View style={styles.rowLabelGroup}>
+                <Ionicons
+                  name={gender === "Male" ? "male-outline" : "female-outline"}
+                  size={20}
+                  color={theme.colors.primary}
+                />
+                <Text style={[styles.preferenceText, { color: textColor }]}>Gender</Text>
+              </View>
+              <Text style={styles.valueText}>{gender || "Not Set"}</Text>
+            </View>
+
+          </View>
+        </View>
+
         {/* Account Management Section */}
         <View style={styles.sectionContainer}>
           <Text style={[styles.sectionTitle, { color: textColor }]}>Account Settings 👤</Text>
           <View style={[styles.preferenceList, { backgroundColor: cardBg, borderColor }]}>
-            
+
             {/* Account item: Manage Profile */}
             <TouchableOpacity
               activeOpacity={0.7}
@@ -501,7 +577,7 @@ export default function Profile() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalCard, { backgroundColor: isDark ? "#021A30" : "#FFFFFF" }]}>
             <Text style={[styles.modalTitle, { color: textColor }]}>Manage Profile ✏️</Text>
-            
+
             <Text style={[styles.modalSubtitle, { color: subTextColor }]}>Choose Avatar</Text>
             <ScrollView
               horizontal
@@ -510,17 +586,17 @@ export default function Profile() {
               contentContainerStyle={styles.avatarScrollContent}
             >
               {AVATARS.map((av) => {
-                const isSelected = editAvatar === av.emoji;
+                const isSelected = editAvatar === av.id;
                 return (
                   <TouchableOpacity
-                    key={av.label}
-                    onPress={() => setEditAvatar(av.emoji)}
+                    key={av.id}
+                    onPress={() => setEditAvatar(av.id)}
                     style={[
                       styles.avatarSelectBox,
                       isSelected && { borderColor: theme.colors.primary, borderWidth: 2.5 },
                     ]}
                   >
-                    <Text style={styles.avatarSelectEmoji}>{av.emoji}</Text>
+                    <Image source={av.image} style={{ width: 44, height: 44, borderRadius: 22, marginBottom: 4 }} />
                     <Text style={[styles.avatarSelectLabel, { color: isSelected ? theme.colors.primary : subTextColor }]}>
                       {av.label}
                     </Text>
@@ -570,7 +646,7 @@ export default function Profile() {
             <Text style={[styles.modalSubtitle, { color: subTextColor }]}>
               Aapka feedback humare liye bohot keemti hai!
             </Text>
-            
+
             <TextInput
               style={[styles.modalInputMultiline, { color: textColor, borderColor }]}
               value={feedbackText}
@@ -598,7 +674,7 @@ export default function Profile() {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -630,6 +706,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 3,
+    overflow: "hidden",
   },
   avatarEmoji: {
     fontSize: 48,

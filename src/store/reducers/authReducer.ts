@@ -1,11 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import { createSlice, isAnyOf } from "@reduxjs/toolkit";
+import type { User } from "@supabase/supabase-js";
 import { api } from "../../services/api";
 // Define a type for the slice state
 interface AuthState {
   accessToken: string;
   refreshToken: string;
+  user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
 }
@@ -14,18 +16,22 @@ interface AuthState {
 const initialState: AuthState = {
   accessToken: "",
   refreshToken: "",
-  isAuthenticated: Boolean(AsyncStorage.getItem("access_token")),
+  user: null,
+  isAuthenticated: false,
   loading: true,
 };
 
 const _setTokens = (
   state: AuthState,
-  data: { accessToken: string; refreshToken: string }
+  data: { accessToken: string; refreshToken: string; user?: User | null }
 ) => {
   AsyncStorage.setItem("access_token", data.accessToken);
   AsyncStorage.setItem("refresh_token", data.refreshToken);
   state.accessToken = data.accessToken;
   state.refreshToken = data.refreshToken;
+  if ("user" in data) {
+    state.user = data.user ?? null;
+  }
   state.isAuthenticated = true;
   state.loading = false;
   return state;
@@ -36,6 +42,7 @@ const _resetTokens = (state: AuthState) => {
   AsyncStorage.setItem("refresh_token", "");
   state.accessToken = "";
   state.refreshToken = "";
+  state.user = null;
   state.isAuthenticated = false;
   state.loading = false;
   return state;
@@ -50,9 +57,16 @@ export const authSlice = createSlice({
     },
     setTokens: (
       state,
-      action: PayloadAction<{ accessToken: string; refreshToken: string }>
+      action: PayloadAction<{
+        accessToken: string;
+        refreshToken: string;
+        user?: User | null;
+      }>
     ) => {
       return _setTokens(state, action.payload);
+    },
+    setUser: (state, action: PayloadAction<User | null>) => {
+      state.user = action.payload;
     },
     resetTokens: (state) => {
       return _resetTokens(state);
@@ -102,6 +116,6 @@ export const authSlice = createSlice({
   },
 });
 
-export const { setLoading, setTokens, resetTokens } = authSlice.actions;
+export const { setLoading, setTokens, setUser, resetTokens } = authSlice.actions;
 
 export default authSlice.reducer;

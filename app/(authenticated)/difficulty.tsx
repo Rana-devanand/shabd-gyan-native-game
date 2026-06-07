@@ -1,413 +1,461 @@
-import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Animated,
+  Dimensions,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme, useThemeMode } from "@rneui/themed";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { LinearGradient } from "expo-linear-gradient";
 import { PUZZLES, PAHELI_PUZZLES } from "@/src/constants/puzzles";
 
+const { width } = Dimensions.get("window");
+
+// ─── Difficulty config ────────────────────────────────────────────────────────
+const DIFFICULTIES = [
+  {
+    id: "Easy",
+    label: "Easy",
+    icon: "leaf-outline" as const,
+    colorLight: "#10B981",
+    colorDark:  "#10B981",
+    tagline: "Warm up your mind",
+  },
+  {
+    id: "Medium",
+    label: "Medium",
+    icon: "bulb-outline" as const,
+    colorLight: "#3B82F6",
+    colorDark:  "#60A5FA",
+    tagline: "A worthy challenge",
+  },
+  {
+    id: "Hard",
+    label: "Hard",
+    icon: "flame-outline" as const,
+    colorLight: "#F59E0B",
+    colorDark:  "#FBBF24",
+    tagline: "Push your limits",
+  },
+  {
+    id: "Super Hard",
+    label: "Super Hard",
+    icon: "flash-outline" as const,
+    colorLight: "#EF4444",
+    colorDark:  "#F87171",
+    tagline: "Masters only",
+  },
+] as const;
+
+type DiffId = typeof DIFFICULTIES[number]["id"];
+
+function getPoints(mode: "shabd" | "paheli", diff: string) {
+  const table: Record<string, Record<string, { base: number; deduction: number; withHint: number }>> = {
+    shabd: {
+      Easy:       { base: 100, deduction: 20,  withHint: 80  },
+      Medium:     { base: 150, deduction: 30,  withHint: 120 },
+      Hard:       { base: 200, deduction: 50,  withHint: 150 },
+      "Super Hard": { base: 300, deduction: 100, withHint: 200 },
+    },
+    paheli: {
+      Easy:       { base: 120, deduction: 30,  withHint: 90  },
+      Medium:     { base: 180, deduction: 40,  withHint: 140 },
+      Hard:       { base: 250, deduction: 60,  withHint: 190 },
+      "Super Hard": { base: 350, deduction: 100, withHint: 250 },
+    },
+  };
+  return table[mode]?.[diff] ?? { base: 100, deduction: 20, withHint: 80 };
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 export default function DifficultyScreen() {
   const { categoryName } = useLocalSearchParams<{ categoryName: string }>();
-  const router = useRouter();
-  const { theme } = useTheme();
-  const { mode } = useThemeMode();
-  const isDark = mode === "dark";
+  const router           = useRouter();
+  const { theme }        = useTheme();
+  const { mode }         = useThemeMode();
+  const isDark           = mode === "dark";
 
-  const textColor = isDark ? "#FFFFFF" : "#0F172A";
-  const subTextColor = isDark ? "#94A3B8" : "#475569";
-  const borderColor = isDark ? "#072C50" : "#E2E8F0";
+  // ── Brand-aligned colours pulled directly from AppTheme ──────────────────
+  const BG          = isDark ? "#021A30" : "#EEF2FF";
+  const SURFACE     = isDark ? "#05203B" : "#FFFFFF";
+  const SURFACE2    = isDark ? "#072C50" : "#F3F4F6";
+  const BORDER      = isDark ? "#072C50" : "#E2E8F0";
+  const ACCENT      = isDark ? "#A2EBD0" : "#3360D6";   // mint dark / blue light
+  const ACCENT_SUB  = isDark ? "rgba(162,235,208,0.12)" : "rgba(51,96,214,0.08)";
+  const TEXT        = isDark ? "#FFFFFF" : "#0F172A";
+  const TEXT_SUB    = isDark ? "#8AB4D4" : "#475569";
 
-  const [gameMode, setGameMode] = useState<"shabd" | "paheli">("shabd");
-  const [solvedIds, setSolvedIds] = useState<string[]>([]);
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string>("Easy");
+  const [gameMode,           setGameMode]           = useState<"shabd" | "paheli">("shabd");
+  const [solvedIds,          setSolvedIds]          = useState<string[]>([]);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<DiffId>("Easy");
+
+  // Animated value for card selection pulse
+  const pulseAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    const loadState = async () => {
+    (async () => {
       try {
-        const storedMode = await AsyncStorage.getItem("shabdgyan_mode") || "shabd";
-        setGameMode(storedMode as any);
-        const solvedIdsStr = await AsyncStorage.getItem("shabdgyan_solved_ids");
-        if (solvedIdsStr) {
-          setSolvedIds(JSON.parse(solvedIdsStr));
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    loadState();
+        const sm = await AsyncStorage.getItem("shabdgyan_mode");
+        if (sm) setGameMode(sm as "shabd" | "paheli");
+        const si = await AsyncStorage.getItem("shabdgyan_solved_ids");
+        if (si) setSolvedIds(JSON.parse(si));
+      } catch {}
+    })();
   }, []);
 
   const modePuzzles = gameMode === "shabd" ? PUZZLES : PAHELI_PUZZLES;
 
-  const getPointsRules = (mode: "shabd" | "paheli", diff: string) => {
-    if (mode === "shabd") {
-      switch (diff) {
-        case "Easy": return { base: 100, deduction: 20, withHint: 80 };
-        case "Medium": return { base: 150, deduction: 30, withHint: 120 };
-        case "Hard": return { base: 200, deduction: 50, withHint: 150 };
-        case "Super Hard": return { base: 300, deduction: 100, withHint: 200 };
-        default: return { base: 100, deduction: 20, withHint: 80 };
-      }
-    } else {
-      switch (diff) {
-        case "Easy": return { base: 120, deduction: 30, withHint: 90 };
-        case "Medium": return { base: 180, deduction: 40, withHint: 140 };
-        case "Hard": return { base: 250, deduction: 60, withHint: 190 };
-        case "Super Hard": return { base: 350, deduction: 100, withHint: 250 };
-        default: return { base: 120, deduction: 30, withHint: 90 };
-      }
-    }
+  const handleSelect = async (id: DiffId) => {
+    try { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+    setSelectedDifficulty(id);
+    Animated.sequence([
+      Animated.timing(pulseAnim, { toValue: 0.97, duration: 80,  useNativeDriver: true }),
+      Animated.spring(pulseAnim,  { toValue: 1,    useNativeDriver: true }),
+    ]).start();
   };
 
-  const points = getPointsRules(gameMode, selectedDifficulty);
-
-  const handleStartGame = async () => {
-    try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch (e) {}
+  const handleStart = async () => {
+    try { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {}
     router.push({
       pathname: "/(authenticated)/play",
-      params: { categoryName, difficulty: selectedDifficulty }
+      params: { categoryName, difficulty: selectedDifficulty },
     });
   };
 
-  const difficultyDetails: Record<string, { desc: string; color: string; icon: string }> = {
-    Easy: {
-      desc: "Fun & light words for a quick warmup! 🥳",
-      color: "#10B981",
-      icon: "happy-outline",
-    },
-    Medium: {
-      desc: "Slightly tricky, perfect for casual players. 🧠",
-      color: "#3B82F6",
-      icon: "bulb-outline",
-    },
-    Hard: {
-      desc: "Mind-bending words that challenge your vocabulary. 🔥",
-      color: "#F59E0B",
-      icon: "flame-outline",
-    },
-    "Super Hard": {
-      desc: "Extreme levels for the ultimate Shabd Khel masters! ⚡",
-      color: "#EF4444",
-      icon: "flash-outline",
-    },
-  };
+  const selected = DIFFICULTIES.find((d) => d.id === selectedDifficulty)!;
+  const selColor = isDark ? selected.colorDark : selected.colorLight;
+  const pts      = getPoints(gameMode, selectedDifficulty);
 
   return (
-    <SafeAreaView style={[styles.safeContainer, { backgroundColor: theme.colors.background }]}>
-      {/* Header back row */}
-      <View style={styles.headerRow}>
+    <SafeAreaView style={[s.root, { backgroundColor: BG }]}>
+
+      {/* ── Header ──────────────────────────────────────────────────────── */}
+      <View style={s.header}>
         <TouchableOpacity
-          activeOpacity={0.7}
           onPress={() => router.back()}
-          style={styles.backBtn}
+          activeOpacity={0.7}
+          style={[s.backBtn, { backgroundColor: SURFACE2, borderColor: BORDER }]}
         >
-          <Ionicons name="arrow-back" size={24} color={textColor} />
+          <Ionicons name="arrow-back" size={20} color={TEXT} />
         </TouchableOpacity>
-        <Text style={[styles.headerCategoryText, { color: subTextColor }]}>
-          {categoryName?.toUpperCase()}
-        </Text>
+
+        <View style={s.headerCenter}>
+          <Text style={[s.headerCategory, { color: ACCENT }]}>
+            {categoryName?.toUpperCase()}
+          </Text>
+          <Text style={[s.headerTitle, { color: TEXT }]}>Select Difficulty</Text>
+        </View>
+
+        {/* Right spacer keeps title centered */}
         <View style={{ width: 40 }} />
       </View>
 
-      <View style={styles.content}>
-        <View style={styles.difficultyHeaderContainer}>
-          <Text style={[styles.difficultyTitleText, { color: textColor }]}>Difficulty</Text>
-          <Text style={[styles.difficultySubTitleText, { color: isDark ? "#A2EBD0" : "#10B981" }]}>SELECT YOUR CHALLENGE</Text>
-        </View>
+      {/* ── Difficulty grid ──────────────────────────────────────────────── */}
+      <View style={s.grid}>
+        {DIFFICULTIES.map((diff) => {
+          const isSelected = selectedDifficulty === diff.id;
+          const color      = isDark ? diff.colorDark : diff.colorLight;
 
-        {/* 2x2 Grid of difficulties */}
-        <View style={styles.difficultyGrid}>
-          {[
-            { id: "Easy", name: "Easy" },
-            { id: "Medium", name: "Medium" },
-            { id: "Hard", name: "Hard" },
-            { id: "Super Hard", name: "Super-Hard" },
-          ].map((diff) => {
-            const isSelected = selectedDifficulty === diff.id;
-            const details = difficultyDetails[diff.id];
-            
-            const catPuzzles = modePuzzles.filter((p) => p.category === categoryName);
-            const diffIndex = ["Easy", "Medium", "Hard", "Super Hard"].indexOf(diff.id);
-            const matchedPuzzle = catPuzzles[diffIndex];
-            const isSolved = matchedPuzzle ? solvedIds.includes(matchedPuzzle.id) : false;
+          const catPuzzles   = modePuzzles.filter((p) => p.category === categoryName);
+          const diffIdx      = DIFFICULTIES.findIndex((d) => d.id === diff.id);
+          const matchedPuzzle = catPuzzles[diffIdx];
+          const isSolved     = matchedPuzzle ? solvedIds.includes(matchedPuzzle.id) : false;
 
-            return (
-              <TouchableOpacity
-                key={diff.id}
-                activeOpacity={0.85}
-                onPress={async () => {
-                  try {
-                    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  } catch (e) {}
-                  setSelectedDifficulty(diff.id);
-                }}
-                style={[
-                  styles.screenshotDifficultyCard,
-                  {
-                    backgroundColor: isDark ? "#05203B" : "#FFFFFF",
-                    borderColor: isSelected ? details.color : borderColor,
-                    borderWidth: isSelected ? 2.5 : 1.5,
-                  },
-                ]}
-              >
-                <View style={styles.screenshotIconCircleContainer}>
-                  <View
-                    style={[
-                      styles.screenshotIconCircle,
-                      {
-                        borderColor: isSelected ? `${details.color}44` : isDark ? "rgba(162, 235, 208, 0.25)" : "rgba(16, 185, 129, 0.2)",
-                        backgroundColor: isSelected ? `${details.color}15` : isDark ? "rgba(162, 235, 208, 0.08)" : "rgba(16, 185, 129, 0.06)",
-                      },
-                    ]}
-                  >
-                    <Ionicons
-                      name={details.icon as any}
-                      size={28}
-                      color={isSelected ? details.color : isDark ? "#A2EBD0" : "#10B981"}
-                    />
-                  </View>
+          return (
+            <TouchableOpacity
+              key={diff.id}
+              activeOpacity={0.8}
+              onPress={() => handleSelect(diff.id)}
+              style={[
+                s.card,
+                {
+                  backgroundColor: isSelected ? `${color}18` : SURFACE,
+                  borderColor:     isSelected ? color : BORDER,
+                  borderWidth:     isSelected ? 2    : 1,
+                },
+              ]}
+            >
+              {/* Solved badge */}
+              {isSolved && (
+                <View style={[s.solvedBadge, { borderColor: `${color}44`, backgroundColor: `${color}18` }]}>
+                  <Ionicons name="checkmark" size={9} color={color} />
+                  <Text style={[s.solvedText, { color }]}>DONE</Text>
                 </View>
-                <Text style={[styles.screenshotDiffName, { color: textColor }]}>{diff.name}</Text>
-                
-                {isSolved && (
-                  <View style={styles.diffSolvedIndicatorBadge}>
-                    <Ionicons name="checkmark-done" size={10} color="#10B981" />
-                    <Text style={styles.diffSolvedIndicatorText}>SOLVED</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            );
-          })}
+              )}
+
+              {/* Icon */}
+              <View style={[s.iconWrap, {
+                backgroundColor: isSelected ? `${color}20` : isDark ? "rgba(162,235,208,0.06)" : "rgba(0,0,0,0.04)",
+                borderColor:     isSelected ? `${color}50` : BORDER,
+              }]}>
+                <Ionicons name={diff.icon} size={26} color={isSelected ? color : TEXT_SUB} />
+              </View>
+
+              <Text style={[s.cardLabel, { color: isSelected ? color : TEXT }]}>{diff.label}</Text>
+              <Text style={[s.cardTagline, { color: TEXT_SUB }]}>{diff.tagline}</Text>
+
+              {/* Selected tick */}
+              {isSelected && (
+                <View style={[s.selectedTick, { backgroundColor: color }]}>
+                  <Ionicons name="checkmark" size={10} color="#fff" />
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* ── Info card ────────────────────────────────────────────────────── */}
+      <View style={[s.infoCard, { backgroundColor: SURFACE, borderColor: BORDER }]}>
+
+        {/* Mode pill */}
+        <View style={[s.modePill, { backgroundColor: ACCENT_SUB, borderColor: `${ACCENT}44` }]}>
+          <Ionicons
+            name={gameMode === "shabd" ? "text-outline" : "help-circle-outline"}
+            size={12}
+            color={ACCENT}
+          />
+          <Text style={[s.modePillText, { color: ACCENT }]}>
+            {gameMode === "shabd" ? "Shabd Mode" : "Paheli Mode"}
+            {"  ·  "}
+            <Text style={{ fontWeight: "700" }}>{selected.label}</Text>
+          </Text>
         </View>
 
-        {/* Selected Difficulty Description Card */}
-        <View style={[styles.descriptionCard, { backgroundColor: isDark ? "#072C50" : "#F8FAFC", borderColor }]}>
-          <Text style={[styles.descriptionTitle, { color: difficultyDetails[selectedDifficulty].color, alignSelf: "center" }]}>
-            {selectedDifficulty.toUpperCase()} MODE
-          </Text>
-          <Text style={[styles.descriptionText, { color: textColor, alignSelf: "center" }]}>
-            {difficultyDetails[selectedDifficulty].desc}
-          </Text>
+        {/* XP rows */}
+        <View style={s.xpRows}>
+          <View style={[s.xpRow, { backgroundColor: `${selColor}10`, borderColor: `${selColor}30` }]}>
+            <View style={[s.xpDot, { backgroundColor: selColor }]} />
+            <Text style={[s.xpLabel, { color: TEXT_SUB }]}>Without hint</Text>
+            <Text style={[s.xpValue, { color: selColor }]}>+{pts.base} XP</Text>
+          </View>
 
-          {/* Points Rules List */}
-          <View style={[styles.rulesList, { borderTopColor: borderColor }]}>
-            <View style={styles.ruleRow}>
-              <Ionicons name="sparkles-outline" size={16} color={difficultyDetails[selectedDifficulty].color} />
-              <Text style={[styles.ruleText, { color: textColor }]}>
-                Solve without Hint: <Text style={styles.boldText}>+{points.base} XP</Text>
-              </Text>
-            </View>
-            <View style={styles.ruleRow}>
-              <Ionicons name="help-buoy-outline" size={16} color={isDark ? "#A2EBD0" : "#10B981"} />
-              <Text style={[styles.ruleText, { color: textColor }]}>
-                Solve with Hint: <Text style={styles.boldText}>+{points.withHint} XP</Text> (revealing hint costs <Text style={styles.penaltyText}>-{points.deduction} XP</Text>)
-              </Text>
-            </View>
-            <View style={styles.ruleRow}>
-              <Ionicons name="refresh-outline" size={16} color="#3B82F6" />
-              <Text style={[styles.ruleText, { color: textColor }]}>
-                Replay practice: <Text style={styles.boldText}>+0 XP</Text> (Practice only)
-              </Text>
-            </View>
+          <View style={[s.xpRow, { backgroundColor: SURFACE2, borderColor: BORDER }]}>
+            <View style={[s.xpDot, { backgroundColor: TEXT_SUB }]} />
+            <Text style={[s.xpLabel, { color: TEXT_SUB }]}>With hint</Text>
+            <Text style={[s.xpValue, { color: TEXT }]}>+{pts.withHint} XP</Text>
+            <Text style={[s.xpPenalty]}> (−{pts.deduction})</Text>
+          </View>
+
+          <View style={[s.xpRow, { backgroundColor: SURFACE2, borderColor: BORDER }]}>
+            <View style={[s.xpDot, { backgroundColor: "#60A5FA" }]} />
+            <Text style={[s.xpLabel, { color: TEXT_SUB }]}>Replay practice</Text>
+            <Text style={[s.xpValue, { color: "#60A5FA" }]}>+0 XP</Text>
           </View>
         </View>
-
-        {/* Start Game Action Button */}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={handleStartGame}
-          style={styles.startButtonWrapper}
-        >
-          <LinearGradient
-            colors={["#10B981", "#059669"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.startButtonGradient}
-          >
-            <Text style={styles.startButtonText}>CHALO KHELEIN! 🚀</Text>
-          </LinearGradient>
-        </TouchableOpacity>
       </View>
+
+      {/* ── CTA ─────────────────────────────────────────────────────────── */}
+      <Animated.View style={[s.ctaWrap, { transform: [{ scale: pulseAnim }] }]}>
+        <TouchableOpacity
+          activeOpacity={0.88}
+          onPress={handleStart}
+          style={[s.cta, { backgroundColor: ACCENT }]}
+        >
+          <Ionicons
+            name="game-controller-outline"
+            size={20}
+            color={isDark ? "#021A30" : "#FFFFFF"}
+            style={{ marginRight: 10 }}
+          />
+          <Text style={[s.ctaText, { color: isDark ? "#021A30" : "#FFFFFF" }]}>
+            Start {selected.label} Game
+          </Text>
+          <Ionicons
+            name="arrow-forward"
+            size={18}
+            color={isDark ? "#021A30" : "#FFFFFF"}
+            style={{ marginLeft: 8 }}
+          />
+        </TouchableOpacity>
+      </Animated.View>
+
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safeContainer: {
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const CARD_W = (width - 40 - 12) / 2;
+
+const s = StyleSheet.create({
+  root: {
     flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 16,
   },
-  headerRow: {
+
+  // Header
+  header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    marginBottom: 20,
+    paddingTop: 4,
   },
   backBtn: {
     width: 40,
     height: 40,
-    justifyContent: "center",
-    alignItems: "flex-start",
-  },
-  headerCategoryText: {
-    fontSize: 12,
-    fontWeight: "bold",
-    letterSpacing: 1.0,
-    fontFamily: "PlusJakartaSans_600SemiBold",
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    gap: 20,
-  },
-  difficultyHeaderContainer: {
+    borderRadius: 12,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    marginVertical: 6,
   },
-  difficultyTitleText: {
-    fontSize: 32,
-    fontFamily: "PlusJakartaSans_700Bold",
-    fontWeight: "900",
-    letterSpacing: 0.5,
+  headerCenter: {
+    alignItems: "center",
   },
-  difficultySubTitleText: {
-    fontSize: 11,
+  headerCategory: {
+    fontSize: 10,
     fontFamily: "PlusJakartaSans_700Bold",
-    fontWeight: "bold",
     letterSpacing: 2,
-    marginTop: 4,
+    marginBottom: 2,
   },
-  difficultyGrid: {
+  headerTitle: {
+    fontSize: 17,
+    fontFamily: "PlusJakartaSans_700Bold",
+    letterSpacing: 0.3,
+  },
+
+  // Grid
+  grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between",
-    gap: 16,
-    marginVertical: 10,
+    gap: 12,
+    marginBottom: 16,
   },
-  screenshotDifficultyCard: {
-    width: "47%",
-    aspectRatio: 0.95,
-    borderRadius: 24,
+  card: {
+    width: CARD_W,
+    borderRadius: 20,
     padding: 16,
     alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1.5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
     position: "relative",
-  },
-  screenshotIconCircleContainer: {
-    marginBottom: 10,
-  },
-  screenshotIconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 1.5,
+    minHeight: 130,
     justifyContent: "center",
-    alignItems: "center",
+    gap: 6,
   },
-  screenshotDiffName: {
-    fontSize: 15,
-    fontWeight: "700",
+  iconWrap: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 2,
+  },
+  cardLabel: {
+    fontSize: 14,
     fontFamily: "PlusJakartaSans_700Bold",
+    letterSpacing: 0.2,
+  },
+  cardTagline: {
+    fontSize: 10,
+    fontFamily: "PlusJakartaSans_500Medium",
     textAlign: "center",
   },
-  diffSolvedIndicatorBadge: {
+  selectedTick: {
+    position: "absolute",
+    bottom: 10,
+    right: 10,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  solvedBadge: {
     position: "absolute",
     top: 10,
     right: 10,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(16, 185, 129, 0.1)",
+    gap: 3,
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(16, 185, 129, 0.2)",
-    gap: 2,
   },
-  diffSolvedIndicatorText: {
-    fontSize: 8,
-    fontWeight: "bold",
-    color: "#10B981",
+  solvedText: {
+    fontSize: 7,
     fontFamily: "PlusJakartaSans_700Bold",
+    letterSpacing: 0.5,
   },
-  descriptionCard: {
-    borderRadius: 18,
-    borderWidth: 1.5,
+
+  // Info card
+  infoCard: {
+    borderRadius: 20,
+    borderWidth: 1,
     padding: 16,
-    gap: 6,
-    alignItems: "flex-start",
-    justifyContent: "center",
+    marginBottom: 16,
+    gap: 12,
   },
-  descriptionTitle: {
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1.5,
-    fontFamily: "PlusJakartaSans_700Bold",
-    marginBottom: 4,
-  },
-  descriptionText: {
-    fontSize: 13,
-    textAlign: "center",
-    fontFamily: "PlusJakartaSans_500Medium",
-    lineHeight: 18,
-  },
-  rulesList: {
-    width: "100%",
-    marginTop: 12,
-    borderTopWidth: 1,
-    paddingTop: 12,
-    gap: 8,
-  },
-  ruleRow: {
+  modePill: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 6,
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
   },
-  ruleText: {
+  modePillText: {
+    fontSize: 11,
+    fontFamily: "PlusJakartaSans_500Medium",
+    letterSpacing: 0.2,
+  },
+  xpRows: {
+    gap: 8,
+  },
+  xpRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  xpDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  xpLabel: {
+    flex: 1,
     fontSize: 12,
     fontFamily: "PlusJakartaSans_500Medium",
   },
-  boldText: {
+  xpValue: {
+    fontSize: 13,
     fontFamily: "PlusJakartaSans_700Bold",
-    fontWeight: "bold",
   },
-  penaltyText: {
+  xpPenalty: {
+    fontSize: 11,
     color: "#EF4444",
-    fontFamily: "PlusJakartaSans_700Bold",
-    fontWeight: "bold",
+    fontFamily: "PlusJakartaSans_500Medium",
   },
-  startButtonWrapper: {
-    borderRadius: 16,
-    overflow: "hidden",
-    marginTop: 10,
-    shadowColor: "#10B981",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+
+  // CTA
+  ctaWrap: {
+    marginTop: "auto",
   },
-  startButtonGradient: {
-    paddingVertical: 16,
+  cta: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
   },
-  startButtonText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "bold",
-    letterSpacing: 1,
+  ctaText: {
+    fontSize: 16,
     fontFamily: "PlusJakartaSans_700Bold",
+    letterSpacing: 0.4,
   },
 });

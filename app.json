@@ -1,23 +1,23 @@
 {
   "expo": {
-    "name": "levere",
-    "slug": "react-native-base",
+    "name": "WordWala",
+    "slug": "WordWala",
     "version": "1.0.0",
-    "icon": "./assets/images/png/splash.png",
-    "scheme": "reactnativebase",
+    "icon": "./assets/images/icon.png",
+    "scheme": "WordWala",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.devanandrana12.reactnativebase"
+      "bundleIdentifier": "com.foocusedai.WordWala"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/png/splash.png",
+        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.devanandrana12.reactnativebase"
+      "package": "com.foocusedai.WordWala"
     },
     "web": {
       "bundler": "metro",
@@ -26,10 +26,11 @@
     },
     "plugins": [
       "expo-router",
+      "@react-native-google-signin/google-signin",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/png/splash.png",
+          "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"

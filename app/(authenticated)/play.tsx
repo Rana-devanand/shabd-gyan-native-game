@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -6,10 +6,11 @@ import {
   ScrollView,
   StyleSheet,
   Dimensions,
-  Modal,
-  SafeAreaView,
   ActivityIndicator,
+  Animated,
+  Easing,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
@@ -19,11 +20,13 @@ import * as Haptics from "expo-haptics";
 import { showMessage } from "react-native-flash-message";
 
 import { PUZZLES, CATEGORIES, PAHELI_PUZZLES, Puzzle } from "@/src/constants/puzzles";
+import { generatePuzzle } from "@/src/services/groqService";
 
 const { width } = Dimensions.get("window");
+const TILE_SIZE = (width - 80) / 5;
 
 export default function PlayScreen() {
-  const { categoryName, difficulty } = useLocalSearchParams<{ categoryName: string; difficulty: string }>();
+  const { categoryName, difficulty, dynamic } = useLocalSearchParams<{ categoryName: string; difficulty: string; dynamic?: string }>();
   const router = useRouter();
   const { theme } = useTheme();
   const { mode } = useThemeMode();
@@ -33,13 +36,25 @@ export default function PlayScreen() {
   const subTextColor = isDark ? "#94A3B8" : "#475569";
   const cardBg = isDark ? "#05203B" : "#FFFFFF";
   const borderColor = isDark ? "#072C50" : "#E2E8F0";
+  const bgGradients = isDark ? ["#021122", "#0b203c", "#021122"] : ["#F8FAFC", "#F1F5F9", "#E2E8F0"];
+  const clueGradients = isDark ? ["#0A1D37", "#21103E"] : ["#E0F2FE", "#EFF6FF"];
+  const clueTextColor = isDark ? "#FFFFFF" : "#0F172A";
+  const clueDifficultyColor = isDark ? "#60A5FA" : "#2563EB";
+  const hintBg = isDark ? "rgba(245, 158, 11, 0.12)" : "rgba(245, 158, 11, 0.08)";
+  const hintBorder = isDark ? "rgba(245, 158, 11, 0.3)" : "rgba(245, 158, 11, 0.2)";
+  const bottomBg = isDark ? "rgba(2, 17, 34, 0.95)" : "rgba(255, 255, 255, 0.95)";
+  const bottomBorder = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(15, 23, 42, 0.08)";
 
   // Game Stats
   const [loading, setLoading] = useState(true);
+  const [fetchingGroq, setFetchingGroq] = useState(false);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [solvedIds, setSolvedIds] = useState<string[]>([]);
   const [gameMode, setGameMode] = useState<"shabd" | "paheli">("shabd");
+  const [dynamicPuzzle, setDynamicPuzzle] = useState<Puzzle | null>(null);
+  const [loadedPuzzle, setLoadedPuzzle] = useState<Puzzle | null>(null);
+  const [loadingNext, setLoadingNext] = useState(false);
 
   // Gameplay State
   const [activePuzzle, setActivePuzzle] = useState<Puzzle | null>(null);
@@ -58,7 +73,7 @@ export default function PlayScreen() {
       try {
         const storedMode = await AsyncStorage.getItem("shabdgyan_mode") || "shabd";
         setGameMode(storedMode as any);
-        
+
         const scoreStr = await AsyncStorage.getItem("shabdgyan_score");
         const streakStr = await AsyncStorage.getItem("shabdgyan_streak");
         const solvedIdsStr = await AsyncStorage.getItem("shabdgyan_solved_ids");
@@ -67,6 +82,19 @@ export default function PlayScreen() {
         if (streakStr) setStreak(parseInt(streakStr, 10) || 0);
         if (solvedIdsStr) {
           setSolvedIds(JSON.parse(solvedIdsStr) || []);
+        }
+
+        // Load dynamic Groq puzzle if requested
+        if (dynamic === "true") {
+          const cacheKey = storedMode === "shabd" ? "groq_shabd_puzzle" : "groq_paheli_puzzle";
+          const dynamicStr = await AsyncStorage.getItem(cacheKey);
+          if (dynamicStr) {
+            setDynamicPuzzle(JSON.parse(dynamicStr));
+          } else {
+            // Local fallback to prevent getting stuck
+            const localFallback = storedMode === "shabd" ? PUZZLES[0] : PAHELI_PUZZLES[0];
+            setDynamicPuzzle(localFallback);
+          }
         }
       } catch (error) {
         console.error("Error loading play stats:", error);
@@ -81,13 +109,56 @@ export default function PlayScreen() {
   const modePuzzles = gameMode === "shabd" ? PUZZLES : PAHELI_PUZZLES;
   const catPuzzles = modePuzzles.filter((p) => p.category === categoryName);
   const diffIndex = ["Easy", "Medium", "Hard", "Super Hard"].indexOf(difficulty);
-  const matchedPuzzle = catPuzzles[diffIndex];
+
+  // Set the default static fallback level immediately
+  useEffect(() => {
+    const fallback = catPuzzles[diffIndex] || modePuzzles[0];
+    setLoadedPuzzle(fallback);
+  }, [categoryName, difficulty, gameMode]);
+
+  // Dynamically load a fresh puzzle for this category from Groq in the background
+  useEffect(() => {
+    if (loading) return;
+    if (dynamic === "true") return;
+
+    let isMounted = true;
+    const fetchCategoryPuzzle = async () => {
+      setFetchingGroq(true);
+      try {
+        console.log(`[PlayScreen] Fetching category puzzle dynamically for category: ${categoryName}, difficulty: ${difficulty}`);
+        const puzzle = await generatePuzzle(gameMode, categoryName, difficulty);
+        if (isMounted) {
+          setLoadedPuzzle(puzzle);
+        }
+      } catch (e) {
+        console.warn(`[PlayScreen] Failed to generate Groq puzzle for category, keeping local fallback:`, e);
+      } finally {
+        if (isMounted) {
+          setFetchingGroq(false);
+        }
+      }
+    };
+
+    fetchCategoryPuzzle();
+    return () => {
+      isMounted = false;
+    };
+  }, [loading, categoryName, gameMode, difficulty]);
+
+  const matchedPuzzle = dynamic === "true" ? dynamicPuzzle : loadedPuzzle;
+
+  // Automatically start the puzzle when matchedPuzzle changes
+  useEffect(() => {
+    if (matchedPuzzle) {
+      startPuzzle(matchedPuzzle);
+    }
+  }, [matchedPuzzle]);
 
   // Initialize a puzzle play state
   const startPuzzle = async (puzzle: Puzzle) => {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch (e) {}
+    } catch (e) { }
 
     setActivePuzzle(puzzle);
     setIsCorrect(false);
@@ -120,7 +191,7 @@ export default function PlayScreen() {
 
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch (e) {}
+    } catch (e) { }
 
     // Update scrambled list to show this tile is tapped
     const newScrambled = [...scrambledLetters];
@@ -135,9 +206,6 @@ export default function PlayScreen() {
       originalScrambledIndex: tileIdx,
     };
     setSelectedLetters(newSelected);
-
-    // Check if the puzzle is complete
-    checkAnswer(newSelected);
   };
 
   // Tap a selected slot to remove the letter
@@ -147,7 +215,7 @@ export default function PlayScreen() {
 
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch (e) {}
+    } catch (e) { }
 
     // Set scrambled tile to untapped
     const newScrambled = [...scrambledLetters];
@@ -165,12 +233,88 @@ export default function PlayScreen() {
     if (!activePuzzle || isCorrect) return;
     try {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-    } catch (e) {}
+    } catch (e) { }
 
     // Set all scrambled tiles back to untapped
     const resetScrambled = scrambledLetters.map((item) => ({ ...item, tapped: false }));
     setScrambledLetters(resetScrambled);
     setSelectedLetters(new Array(activePuzzle.answer.length).fill(null));
+  };
+
+  // Auto-fill the correct answer into slots
+  const handleSeeAnswer = async () => {
+    if (!activePuzzle || isCorrect) return;
+
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch (e) { }
+
+    const correctWord = activePuzzle.answer.toUpperCase();
+    const correctLetters = correctWord.split("");
+
+    const tempScrambled = scrambledLetters.map((s) => ({ ...s, tapped: false }));
+    const newSelected: Array<{ letter: string; scrambledIndex: number; originalScrambledIndex: number } | null> = [];
+
+    for (let i = 0; i < correctLetters.length; i++) {
+      const letter = correctLetters[i];
+      const foundIdx = tempScrambled.findIndex((tile) => tile.letter === letter && !tile.tapped);
+      if (foundIdx !== -1) {
+        tempScrambled[foundIdx].tapped = true;
+        newSelected.push({
+          letter: tempScrambled[foundIdx].letter,
+          scrambledIndex: tempScrambled[foundIdx].index,
+          originalScrambledIndex: foundIdx,
+        });
+      } else {
+        newSelected.push(null);
+      }
+    }
+
+    setScrambledLetters(tempScrambled);
+    setSelectedLetters(newSelected);
+  };
+
+  // Delete letters one by one from right to left (Backspace)
+  const handleBackspace = async () => {
+    if (isCorrect || !activePuzzle) return;
+
+    let lastFilledIdx = -1;
+    for (let i = selectedLetters.length - 1; i >= 0; i--) {
+      if (selectedLetters[i] !== null) {
+        lastFilledIdx = i;
+        break;
+      }
+    }
+
+    if (lastFilledIdx === -1) return;
+
+    try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (e) { }
+
+    const slotItem = selectedLetters[lastFilledIdx];
+    if (slotItem) {
+      const newScrambled = [...scrambledLetters];
+      newScrambled[slotItem.originalScrambledIndex].tapped = false;
+      setScrambledLetters(newScrambled);
+
+      const newSelected = [...selectedLetters];
+      newSelected[lastFilledIdx] = null;
+      setSelectedLetters(newSelected);
+    }
+  };
+
+  // Explicitly validate user answer
+  const handleSubmitAnswer = () => {
+    if (selectedLetters.some((item) => item === null)) {
+      showMessage({
+        message: "Word Incomplete ⚠️",
+        description: "Pehle saare letter slots fill kijiye!",
+        type: "warning",
+      });
+      return;
+    }
+    checkAnswer(selectedLetters);
   };
 
   // Check if current input matches the answer
@@ -187,7 +331,7 @@ export default function PlayScreen() {
 
       try {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      } catch (e) {}
+      } catch (e) { }
 
       // Update storage and states
       const puzzleId = activePuzzle.id;
@@ -235,7 +379,7 @@ export default function PlayScreen() {
     } else {
       try {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      } catch (e) {}
+      } catch (e) { }
       showMessage({
         message: "Opps! Galat Jawab ❌",
         description: "Tiles ko sahi order mein jamayein!",
@@ -246,310 +390,421 @@ export default function PlayScreen() {
   };
 
   // Launch Next Unsolved Level
-  const handlePlayNext = () => {
+  const handlePlayNext = async () => {
     if (!activePuzzle) return;
 
-    const currentIdx = modePuzzles.findIndex((p) => p.id === activePuzzle.id);
-    let nextPuzzle = modePuzzles.slice(currentIdx + 1).find((p) => !solvedIds.includes(p.id));
-
-    if (!nextPuzzle) {
-      nextPuzzle = modePuzzles.find((p) => !solvedIds.includes(p.id));
+    if (dynamic === "true") {
+      setActivePuzzle(null);
+      router.replace("/(authenticated)/(tabs)");
+      return;
     }
 
-    if (nextPuzzle) {
-      startPuzzle(nextPuzzle);
-    } else {
-      setActivePuzzle(null);
-      showMessage({
-        message: "Congratulations! 🎉",
-        description: "Aapne saare puzzles solve kar liye hain!",
-        type: "success",
-        duration: 3500,
-      });
+    setLoadingNext(true);
+    setFetchingGroq(true);
+    try {
+      console.log(`[PlayScreen] Fetching NEXT category puzzle dynamically for category: ${categoryName}, difficulty: ${difficulty}`);
+      const puzzle = await generatePuzzle(gameMode, categoryName, difficulty);
+      setLoadedPuzzle(puzzle);
+      // startPuzzle will trigger automatically via useEffect because loadedPuzzle updates matchedPuzzle
+    } catch (e) {
+      console.warn(`[PlayScreen] Failed to generate next Groq puzzle, falling back:`, e);
+
+      const currentIdx = modePuzzles.findIndex((p) => p.id === activePuzzle.id);
+      let nextPuzzle = modePuzzles.slice(currentIdx + 1).find((p) => !solvedIds.includes(p.id) && p.category === categoryName);
+
+      if (!nextPuzzle) {
+        nextPuzzle = modePuzzles.find((p) => !solvedIds.includes(p.id) && p.category === categoryName);
+      }
+
+      if (!nextPuzzle) {
+        nextPuzzle = modePuzzles.find((p) => !solvedIds.includes(p.id));
+      }
+
+      if (nextPuzzle) {
+        setLoadedPuzzle(nextPuzzle);
+      } else {
+        setActivePuzzle(null);
+        showMessage({
+          message: "Congratulations! 🎉",
+          description: "Aapne saare puzzles solve kar liye hain!",
+          type: "success",
+          duration: 3500,
+        });
+      }
+    } finally {
+      setLoadingNext(false);
+      setFetchingGroq(false);
     }
   };
 
-  if (loading) {
+  // Beautiful loader component inside PlayScreen for encapsulation
+  const BeautifulLoader = () => {
+    const spinValue = useRef(new Animated.Value(0)).current;
+    const pulseValue = useRef(new Animated.Value(0.6)).current;
+
+    useEffect(() => {
+      Animated.loop(
+        Animated.timing(spinValue, {
+          toValue: 1,
+          duration: 1800,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        })
+      ).start();
+
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseValue, {
+            toValue: 1.0,
+            duration: 1000,
+            easing: Easing.ease,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseValue, {
+            toValue: 0.6,
+            duration: 1000,
+            easing: Easing.ease,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }, []);
+
+    const spin = spinValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: ["0deg", "360deg"],
+    });
+
     return (
-      <View style={[styles.loadingCenter, { backgroundColor: theme.colors.background }]}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </View>
+      <LinearGradient
+        colors={["#021122", "#0b203c", "#021122"]}
+        style={styles.loaderContainer}
+      >
+        <SafeAreaView style={styles.loaderContent}>
+          <Animated.View style={{ transform: [{ rotate: spin }] }}>
+            <MaterialCommunityIcons name="brain" size={64} color="#A2EBD0" />
+          </Animated.View>
+
+          <Animated.View style={[styles.loaderTextBox, { opacity: pulseValue }]}>
+            <Text style={styles.loaderText}>GENERATING PUZZLE...</Text>
+            <Text style={styles.loaderSubText}>Aapke liye sawal taiyar kiya ja raha hai</Text>
+          </Animated.View>
+
+          <ActivityIndicator size="small" color="#A2EBD0" style={{ marginTop: 20 }} />
+        </SafeAreaView>
+      </LinearGradient>
     );
+  };
+
+  if (loading || fetchingGroq || (dynamic === "true" && !dynamicPuzzle) || !activePuzzle) {
+    return <BeautifulLoader />;
   }
 
-  const isPuzzleSolved = matchedPuzzle ? solvedIds.includes(matchedPuzzle.id) : false;
+  const answerLength = activePuzzle?.answer?.length || 5;
+  const slotWidth = Math.min(54, (width - 48 - (answerLength * 6)) / answerLength);
+  const slotHeight = slotWidth * 1.15;
+  const slotFontSize = Math.max(16, slotWidth * 0.5);
 
   return (
-    <SafeAreaView style={[styles.safeContainer, { backgroundColor: theme.colors.background }]}>
-      {/* Header back row */}
-      <View style={styles.headerRow}>
-        <TouchableOpacity
-          activeOpacity={0.7}
-          onPress={() => router.back()}
-          style={styles.backBtn}
-        >
-          <Ionicons name="arrow-back" size={24} color={textColor} />
-        </TouchableOpacity>
-        <Text style={[styles.headerCategoryText, { color: subTextColor }]}>
-          {categoryName?.toUpperCase()} • {difficulty?.toUpperCase()}
-        </Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <LinearGradient
+      colors={bgGradients}
+      style={styles.modalContainer}
+    >
+      <SafeAreaView style={styles.modalSafeArea}>
 
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-        <View style={styles.levelsStepSection}>
-          <View style={styles.stepTitleContainer}>
-            <Text style={[styles.stepTitleText, { color: textColor }]}>Level Board 🎮</Text>
+        {/* Fullscreen Header */}
+        <View style={styles.modalHeader}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => router.back()}
+            style={[
+              styles.headerCircleBtn,
+              {
+                backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
+                borderWidth: 1
+              }
+            ]}
+          >
+            <Ionicons name="arrow-back" size={20} color={textColor} />
+          </TouchableOpacity>
+
+          <View style={styles.modalHeaderTitleBox}>
+            <Text style={[styles.modalHeaderCategory, { color: clueDifficultyColor }]}>{activePuzzle.category.toUpperCase()}</Text>
+            <Text style={[styles.modalHeaderTitle, { color: textColor }]}>UNSCRAMBLE WORD</Text>
           </View>
 
-          {matchedPuzzle ? (
-            <View style={[styles.puzzleDetailCard, { backgroundColor: cardBg, borderColor }]}>
-              <LinearGradient
-                colors={
-                  CATEGORIES.find((c) => c.name === categoryName)?.gradient || [
-                    "#4F46E5",
-                    "#06B6D4",
-                  ]
-                }
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.puzzleDetailGradientHeader}
-              >
-                <Text style={styles.puzzleDetailLevelText}>
-                  LEVEL {diffIndex + 1}
-                </Text>
-                <Text style={styles.puzzleDetailDiffTag}>
-                  {difficulty?.toUpperCase()}
-                </Text>
-              </LinearGradient>
-
-              <View style={styles.puzzleDetailBody}>
-                <Text style={[styles.puzzleDetailClueLabel, { color: subTextColor }]}>Hinglish Clue:</Text>
-                <Text style={[styles.puzzleDetailClueText, { color: textColor }]}>
-                  "{matchedPuzzle.clue}"
-                </Text>
-
-                <View style={styles.puzzleDetailStatsRow}>
-                  <View style={styles.puzzleStatItem}>
-                    <Ionicons name="sparkles" size={16} color="#FBBF24" />
-                    <Text style={[styles.puzzleStatText, { color: textColor }]}>100 Points Reward</Text>
-                  </View>
-                  <View style={styles.puzzleStatItem}>
-                    <Ionicons name="checkbox" size={16} color={isPuzzleSolved ? "#10B981" : subTextColor} />
-                    <Text style={[styles.puzzleStatText, { color: textColor }]}>
-                      {isPuzzleSolved ? "Solved ✅" : "Unsolved 🔒"}
-                    </Text>
-                  </View>
-                </View>
-
-                <TouchableOpacity
-                  activeOpacity={0.8}
-                  onPress={() => startPuzzle(matchedPuzzle)}
-                  style={styles.puzzlePlayBtn}
-                >
-                  <Text style={styles.puzzlePlayBtnText}>
-                    {isPuzzleSolved ? "REPLAY LEVEL 🔄" : "CHALO KHELEIN! 🚀"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          ) : (
-            <View style={[styles.noPuzzleCard, { backgroundColor: cardBg, borderColor }]}>
-              <Ionicons name="lock-closed" size={48} color={subTextColor} />
-              <Text style={[styles.noPuzzleTitle, { color: textColor }]}>No Puzzle Found 🔒</Text>
-              <Text style={[styles.noPuzzleDesc, { color: subTextColor }]}>
-                Is mode mein abhi koi paheli available nahi hai! Jald hi hum naye levels add karenge.
-              </Text>
-            </View>
-          )}
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => router.back()}
+            style={[
+              styles.headerCircleBtn,
+              {
+                backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
+                borderWidth: 1
+              }
+            ]}
+          >
+            <Ionicons name="close" size={20} color={textColor} />
+          </TouchableOpacity>
         </View>
 
-        <View style={{ height: 60 }} />
-      </ScrollView>
+        {/* Stats row below header title */}
+        <View style={styles.headerStatsRow}>
+          <View style={styles.statsContainerLeft}>
+            <View style={[styles.headerStatPill, { backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)", borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)" }]}>
+              <FontAwesome5 name="trophy" size={11} color="#FBBF24" />
+              <Text style={[styles.headerStatText, { color: isDark ? "#FFFFFF" : "#334155" }]}>{score} XP</Text>
+            </View>
+            <View style={[styles.headerStatPill, { backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)", borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)" }]}>
+              <MaterialCommunityIcons name="fire" size={13} color="#EF4444" />
+              <Text style={[styles.headerStatText, { color: isDark ? "#FFFFFF" : "#334155" }]}>{streak} Streak</Text>
+            </View>
+          </View>
 
-      {/* Gameplay Fullscreen Overlay Modal */}
-      {activePuzzle && (
-        <Modal
-          visible={activePuzzle !== null}
-          animationType="slide"
-          transparent={false}
-          onRequestClose={() => setActivePuzzle(null)}
-        >
-          <LinearGradient
-            colors={["#021122", "#0b203c", "#021122"]}
-            style={styles.modalContainer}
-          >
-            <SafeAreaView style={styles.modalSafeArea}>
-              
-              {/* Modal Header */}
-              <View style={styles.modalHeader}>
-                <TouchableOpacity
-                  activeOpacity={0.7}
-                  onPress={() => setActivePuzzle(null)}
-                  style={styles.modalCloseButton}
+          <View style={styles.statsContainerRight}>
+            {/* See Answer Button */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={handleSeeAnswer}
+              disabled={isCorrect}
+              style={[
+                styles.headerStatPill,
+                {
+                  borderColor: isDark ? "#8B5CF6" : "#7C3AED",
+                  backgroundColor: isDark ? "rgba(139, 92, 246, 0.08)" : "rgba(124, 58, 237, 0.05)"
+                }
+              ]}
+            >
+              <Ionicons name="eye-outline" size={13} color={isDark ? "#C084FC" : "#7C3AED"} />
+              <Text style={[styles.headerStatText, { color: isDark ? "#C084FC" : "#7C3AED" }]}>Answer</Text>
+            </TouchableOpacity>
+
+            {/* Hint Button */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => {
+                try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch (e) { }
+                setShowHint(!showHint);
+              }}
+              style={[
+                styles.headerStatPill,
+                { backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)", borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)" },
+                showHint && { borderColor: "#FBBF24", backgroundColor: "rgba(251, 191, 36, 0.12)" }
+              ]}
+            >
+              <MaterialCommunityIcons name="lightbulb-on" size={13} color="#FBBF24" />
+              <Text style={[styles.headerStatText, { color: isDark ? "#FFFFFF" : "#334155" }]}>Hint</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.modalScrollContent} showsVerticalScrollIndicator={false}>
+
+          {/* Clue Card */}
+          <View style={[styles.clueCard, { borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)", borderWidth: 1 }]}>
+            <LinearGradient
+              colors={clueGradients}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.clueCardGradient}
+            >
+              <Text style={[styles.clueText, { color: clueTextColor }]}>"{activePuzzle.clue}"</Text>
+              <Text style={[styles.clueMetaText, { color: subTextColor }]}>
+                Difficulty: <Text style={{ color: clueDifficultyColor, fontWeight: "bold" }}>{difficulty}</Text> • {activePuzzle.answer.length} letters
+              </Text>
+            </LinearGradient>
+          </View>
+
+          {/* Answer slots section */}
+          <View style={styles.sectionHeaderRow}>
+            <Text style={[styles.sectionTitle, { color: subTextColor }]}>YOUR ANSWER</Text>
+            <Text style={[styles.sectionMeta, { color: subTextColor }]}>{selectedLetters.filter(x => x !== null).length}/{activePuzzle.answer.length}</Text>
+          </View>
+
+          {/* Letter Slots */}
+          <View style={styles.slotsContainer}>
+            {selectedLetters.map((slot, idx) => (
+              <TouchableOpacity
+                key={`slot_${idx}`}
+                activeOpacity={0.7}
+                onPress={() => handleRemoveSelected(idx)}
+                style={[
+                  styles.slotBox,
+                  {
+                    width: slotWidth,
+                    height: slotHeight,
+                    borderWidth: 1,
+                  },
+                  slot
+                    ? {
+                      borderColor: isDark ? "#A2EBD0" : "#10B981",
+                      backgroundColor: isDark ? "rgba(162, 235, 208, 0.12)" : "rgba(16, 185, 129, 0.08)"
+                    }
+                    : {
+                      borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.12)",
+                      backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
+                    },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.slotLetter,
+                    {
+                      fontSize: slotFontSize,
+                      color: slot ? (isDark ? "#A2EBD0" : "#065F46") : textColor
+                    }
+                  ]}
                 >
-                  <Ionicons name="close-circle-outline" size={32} color="#94A3B8" />
-                </TouchableOpacity>
+                  {slot ? slot.letter : ""}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-                <View style={styles.modalHeaderTitleBox}>
-                  <Text style={styles.modalHeaderCategory}>{activePuzzle.category.toUpperCase()}</Text>
-                  <Text style={styles.modalHeaderTitle}>UNSCRAMBLE WORD</Text>
-                </View>
-                
-                <View style={{ width: 32 }} />
+          {/* Hint Disclosure */}
+          {showHint && (
+            <View style={{ alignItems: "center", marginVertical: 6 }}>
+              <View style={[styles.hintTextBubble, { backgroundColor: hintBg, borderColor: hintBorder, borderWidth: 1 }]}>
+                <Text style={styles.hintBubbleTitle}>Hint Details:</Text>
+                <Text style={[styles.hintBubbleText, { color: textColor }]}>{activePuzzle.hint}</Text>
               </View>
+            </View>
+          )}
 
-              <ScrollView contentContainerStyle={styles.modalScrollContent} showsVerticalScrollIndicator={false}>
-                
-                {/* Clue Card */}
-                <View style={styles.clueCard}>
-                  <LinearGradient
-                    colors={["rgba(59, 130, 246, 0.15)", "rgba(139, 92, 246, 0.15)"]}
-                    style={styles.clueCardGradient}
-                  >
-                    <Text style={styles.clueLabel}>Hinglish Clue 💡</Text>
-                    <Text style={styles.clueText}>"{activePuzzle.clue}"</Text>
-                  </LinearGradient>
+          {/* Letter Tiles Section */}
+          <View style={styles.sectionHeaderRow}>
+            <Text style={[styles.sectionTitle, { color: subTextColor }]}>LETTER TILES</Text>
+            <Text style={[styles.sectionMeta, { color: subTextColor }]}>Tap to insert</Text>
+          </View>
+
+          {/* Scrambled letters tiles pool */}
+          <View style={styles.scrambledTilesGrid}>
+            {scrambledLetters.map((tile, idx) => (
+              <TouchableOpacity
+                key={`tile_${tile.index}_${idx}`}
+                activeOpacity={0.8}
+                onPress={() => handleTapScrambled(tile, idx)}
+                disabled={tile.tapped || isCorrect}
+                style={[
+                  styles.tileButton,
+                  { borderWidth: 1 },
+                  tile.tapped
+                    ? {
+                      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.04)",
+                      borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.1)"
+                    }
+                    : { backgroundColor: "#8B5CF6", borderColor: "#A78BFA" },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.tileLetter,
+                    {
+                      color: tile.tapped
+                        ? (isDark ? "rgba(255, 255, 255, 0.25)" : "rgba(0, 0, 0, 0.25)")
+                        : "#FFFFFF"
+                    },
+                  ]}
+                >
+                  {tile.letter}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+        </ScrollView>
+
+        {/* Bottom Actions Fixed Container */}
+        <View style={styles.bottomActionsContainer}>
+          {/* Submit Answer Button */}
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={handleSubmitAnswer}
+            disabled={isCorrect}
+            style={[styles.submitButton, isCorrect && styles.submitButtonDisabled]}
+          >
+            <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+            <Text style={styles.submitButtonText}>SUBMIT ANSWER</Text>
+          </TouchableOpacity>
+
+          {/* Action Row */}
+          <View style={styles.modalActionRow}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={handleBackspace}
+              disabled={isCorrect}
+              style={[styles.modalActionBtn, styles.backspaceActionBtn]}
+            >
+              <Ionicons name="backspace-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+              <Text style={styles.modalActionBtnText}>Delete Letter</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={handleResetPuzzle}
+              disabled={isCorrect}
+              style={[styles.modalActionBtn, styles.resetActionBtn]}
+            >
+              <Ionicons name="refresh" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
+              <Text style={styles.modalActionBtnText}>Clear Board</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Victory Celebration Overlay */}
+        {isCorrect && (
+          <View style={styles.victoryOverlay}>
+            <View style={styles.victoryCard}>
+              <LinearGradient
+                colors={["#10B981", "#059669"]}
+                style={styles.victoryGradient}
+              >
+                <FontAwesome5 name="check-circle" size={48} color="#FFFFFF" style={styles.victoryIcon} />
+                <Text style={styles.victoryTitle}>Sahi Jawab! 🎉</Text>
+                <Text style={styles.victoryPoints}>+100 XP Earned</Text>
+
+                <View style={styles.solvedWordDetails}>
+                  <Text style={styles.solvedWordLabel}>Correct Word:</Text>
+                  <Text style={styles.solvedWordText}>{activePuzzle.answer.toUpperCase()}</Text>
+                  <Text style={styles.solvedWordClue}>"{activePuzzle.clue}"</Text>
                 </View>
 
-                {/* Letter Slots */}
-                <View style={styles.slotsContainer}>
-                  {selectedLetters.map((slot, idx) => (
-                    <TouchableOpacity
-                      key={`slot_${idx}`}
-                      activeOpacity={0.7}
-                      onPress={() => handleRemoveSelected(idx)}
-                      style={[
-                        styles.slotBox,
-                        slot
-                          ? { borderColor: "#60A5FA", backgroundColor: "rgba(30, 58, 138, 0.7)" }
-                          : { borderColor: "rgba(255, 255, 255, 0.15)", borderStyle: "dashed" },
-                      ]}
-                    >
-                      <Text style={styles.slotLetter}>{slot ? slot.letter : ""}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                {/* Hint Disclosure */}
-                {showHint ? (
-                  <View style={styles.hintTextBubble}>
-                    <Text style={styles.hintBubbleTitle}>Hint Details:</Text>
-                    <Text style={styles.hintBubbleText}>{activePuzzle.hint}</Text>
-                  </View>
-                ) : (
+                <View style={styles.victoryActionRow}>
                   <TouchableOpacity
-                    onPress={() => {
-                      try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch(e){}
-                      setShowHint(true);
-                    }}
-                    style={styles.revealHintButton}
+                    activeOpacity={0.8}
+                    onPress={handlePlayNext}
+                    disabled={loadingNext}
+                    style={styles.nextPuzzleButton}
                   >
-                    <MaterialCommunityIcons name="lightbulb-on" size={18} color="#FBBF24" />
-                    <Text style={styles.revealHintText}>Reveal Hint</Text>
-                  </TouchableOpacity>
-                )}
-
-                {/* Scrambled letters tiles pool */}
-                <View style={styles.scrambledTilesContainer}>
-                  <Text style={styles.poolTitle}>Letter Tiles (Tap to insert):</Text>
-                  <View style={styles.scrambledTilesGrid}>
-                    {scrambledLetters.map((tile, idx) => (
-                      <TouchableOpacity
-                        key={`tile_${tile.index}_${idx}`}
-                        activeOpacity={0.8}
-                        onPress={() => handleTapScrambled(tile, idx)}
-                        disabled={tile.tapped || isCorrect}
-                        style={[
-                          styles.tileButton,
-                          tile.tapped
-                            ? { backgroundColor: "rgba(255, 255, 255, 0.05)", borderColor: "rgba(255, 255, 255, 0.05)" }
-                            : { backgroundColor: "rgba(255, 255, 255, 0.12)", borderColor: "#818CF8" },
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.tileLetter,
-                            { opacity: tile.tapped ? 0.15 : 1.0, color: tile.tapped ? "#475569" : "#FFFFFF" },
-                          ]}
-                        >
-                          {tile.letter}
+                    {loadingNext ? (
+                      <ActivityIndicator size="small" color="#10B981" style={{ marginRight: 6 }} />
+                    ) : (
+                      <>
+                        <Text style={styles.nextPuzzleButtonText}>
+                          {dynamic === "true" ? "Back to Hub" : "Next Level"}
                         </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-
-                {/* Action Row */}
-                <View style={styles.modalActionRow}>
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={handleResetPuzzle}
-                    disabled={isCorrect}
-                    style={[styles.modalActionBtn, styles.resetActionBtn]}
-                  >
-                    <Ionicons name="refresh" size={18} color="#FFFFFF" />
-                    <Text style={styles.modalActionBtnText}>Clear Board</Text>
+                        <Ionicons name="arrow-forward" size={18} color="#10B981" />
+                      </>
+                    )}
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => setActivePuzzle(null)}
-                    style={[styles.modalActionBtn, styles.giveUpActionBtn]}
+                    activeOpacity={0.8}
+                    onPress={() => router.back()}
+                    style={styles.backToDashboardButton}
                   >
-                    <Ionicons name="exit-outline" size={18} color="#FFFFFF" />
-                    <Text style={styles.modalActionBtnText}>Go Back</Text>
+                    <Text style={styles.backToDashboardButtonText}>Close Hub</Text>
                   </TouchableOpacity>
                 </View>
+              </LinearGradient>
+            </View>
+          </View>
+        )}
 
-              </ScrollView>
-
-              {/* Victory Celebration Overlay */}
-              {isCorrect && (
-                <View style={styles.victoryOverlay}>
-                  <View style={styles.victoryCard}>
-                    <LinearGradient
-                      colors={["#10B981", "#059669"]}
-                      style={styles.victoryGradient}
-                    >
-                      <FontAwesome5 name="check-circle" size={48} color="#FFFFFF" style={styles.victoryIcon} />
-                      <Text style={styles.victoryTitle}>Sahi Jawab! 🎉</Text>
-                      <Text style={styles.victoryPoints}>+100 XP Earned</Text>
-                      
-                      <View style={styles.solvedWordDetails}>
-                        <Text style={styles.solvedWordLabel}>Correct Word:</Text>
-                        <Text style={styles.solvedWordText}>{activePuzzle.answer.toUpperCase()}</Text>
-                        <Text style={styles.solvedWordClue}>"{activePuzzle.clue}"</Text>
-                      </View>
-
-                      <View style={styles.victoryActionRow}>
-                        <TouchableOpacity
-                          activeOpacity={0.8}
-                          onPress={handlePlayNext}
-                          style={styles.nextPuzzleButton}
-                        >
-                          <Text style={styles.nextPuzzleButtonText}>Next Level</Text>
-                          <Ionicons name="arrow-forward" size={18} color="#10B981" />
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                          activeOpacity={0.8}
-                          onPress={() => setActivePuzzle(null)}
-                          style={styles.backToDashboardButton}
-                        >
-                          <Text style={styles.backToDashboardButtonText}>Close Hub</Text>
-                        </TouchableOpacity>
-                      </View>
-                    </LinearGradient>
-                  </View>
-                </View>
-              )}
-
-            </SafeAreaView>
-          </LinearGradient>
-        </Modal>
-      )}
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
 
@@ -708,8 +963,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.08)",
   },
   modalCloseButton: {
     padding: 2,
@@ -854,9 +1107,9 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   tileButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 12,
+    width: TILE_SIZE,
+    height: TILE_SIZE,
+    borderRadius: 14,
     borderWidth: 1.5,
     justifyContent: "center",
     alignItems: "center",
@@ -867,7 +1120,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   tileLetter: {
-    fontSize: 22,
+    fontSize: 26,
     fontWeight: "bold",
     fontFamily: "PlusJakartaSans_600SemiBold",
   },
@@ -891,8 +1144,35 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.15)",
   },
-  giveUpActionBtn: {
-    backgroundColor: "#dc2626",
+  backspaceActionBtn: {
+    backgroundColor: "rgba(239, 68, 68, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(239, 68, 68, 0.3)",
+  },
+  submitButton: {
+    backgroundColor: "#3b82f6",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 14,
+    borderRadius: 14,
+    marginTop: 22,
+    shadowColor: "#3b82f6",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  submitButtonDisabled: {
+    backgroundColor: "rgba(59, 130, 246, 0.4)",
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  submitButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
+    fontFamily: "PlusJakartaSans_700Bold",
   },
   modalActionBtnText: {
     color: "#FFFFFF",
@@ -1012,5 +1292,126 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
     fontFamily: "PlusJakartaSans_600SemiBold",
+  },
+  loaderContainer: {
+    flex: 1,
+  },
+  loaderContent: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 24,
+  },
+  loaderTextBox: {
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 30,
+  },
+  loaderText: {
+    color: "#A2EBD0",
+    fontSize: 18,
+    fontWeight: "bold",
+    letterSpacing: 2.0,
+    fontFamily: "PlusJakartaSans_700Bold",
+  },
+  loaderSubText: {
+    color: "#94A3B8",
+    fontSize: 13,
+    textAlign: "center",
+    fontFamily: "PlusJakartaSans_400Regular",
+  },
+  headerCircleBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderColor: "rgba(255,255,255,0.12)",
+    borderWidth: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerStatsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    marginTop: 6,
+    marginBottom: 6,
+  },
+  statsContainerLeft: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  statsContainerRight: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  headerStatPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderColor: "rgba(255,255,255,0.12)",
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 15,
+  },
+  headerStatText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "bold",
+    fontFamily: "PlusJakartaSans_600SemiBold",
+  },
+  cluePill: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(162, 235, 208, 0.12)",
+    borderColor: "rgba(162, 235, 208, 0.25)",
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  cluePillText: {
+    color: "#A2EBD0",
+    fontSize: 9,
+    fontWeight: "900",
+    letterSpacing: 1.0,
+    fontFamily: "PlusJakartaSans_700Bold",
+  },
+  clueMetaText: {
+    color: "#94A3B8",
+    fontSize: 11,
+    marginTop: 10,
+    fontFamily: "PlusJakartaSans_500Medium",
+  },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 18,
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    color: "#94A3B8",
+    fontSize: 11,
+    fontWeight: "bold",
+    letterSpacing: 0.8,
+    fontFamily: "PlusJakartaSans_700Bold",
+  },
+  sectionMeta: {
+    color: "#94A3B8",
+    fontSize: 11,
+    fontFamily: "PlusJakartaSans_500Medium",
+  },
+  bottomActionsContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 20,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: "rgba(2, 17, 34, 0.95)",
   },
 });

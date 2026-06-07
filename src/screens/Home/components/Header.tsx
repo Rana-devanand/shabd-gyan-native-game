@@ -4,6 +4,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "@rneui/themed";
+import AvatarDisplay from "../../../common/AvatarDisplay";
+
 
 interface HeaderProps {
   nickname: string;
@@ -14,6 +16,7 @@ interface HeaderProps {
   textColor: string;
   subTextColor: string;
   borderColor: string;
+  groqWord?: string;
 }
 
 export default function Header({
@@ -25,13 +28,14 @@ export default function Header({
   textColor,
   subTextColor,
   borderColor,
+  groqWord,
 }: HeaderProps) {
   const { theme } = useTheme();
 
   const handleToggleMode = async (mode: "shabd" | "paheli") => {
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    } catch (e) {}
+    } catch (e) { }
     setGameMode(mode);
     await AsyncStorage.setItem("shabdgyan_mode", mode);
   };
@@ -43,10 +47,15 @@ export default function Header({
           colors={["#FF6B6B", "#FF8E53"]}
           style={styles.avatarGradient}
         >
-          <Text style={styles.avatarEmoji}>{avatar}</Text>
+          <AvatarDisplay
+            avatar={avatar}
+            size={48}
+            imageStyle={styles.avatarImage}
+            textStyle={styles.avatarEmoji}
+          />
         </LinearGradient>
         <View style={styles.headerTextContainer}>
-          <Text style={[styles.namasteText, { color: theme.colors.secondary }]}>NAMASTE 👋</Text>
+          <Text style={[styles.namasteText, { color: theme.colors.secondary }]}>WELCOME 👋</Text>
           <Text style={[styles.playerName, { color: textColor }]}>{nickname}</Text>
         </View>
       </View>
@@ -69,7 +78,7 @@ export default function Header({
                 : { color: subTextColor },
             ]}
           >
-            Shabd
+            Word
           </Text>
         </TouchableOpacity>
 
@@ -89,7 +98,7 @@ export default function Header({
                 : { color: subTextColor },
             ]}
           >
-            Paheli
+            Riddle
           </Text>
         </TouchableOpacity>
       </View>
@@ -121,9 +130,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 3,
+    overflow: "hidden",
   },
   avatarEmoji: {
     fontSize: 26,
+  },
+  avatarImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 24,
   },
   headerTextContainer: {
     justifyContent: "center",
@@ -139,6 +154,13 @@ const styles = StyleSheet.create({
     fontFamily: "PlusJakartaSans_600SemiBold",
     fontWeight: "bold",
     marginTop: 1,
+  },
+  groqWordText: {
+    fontSize: 11,
+    fontFamily: "PlusJakartaSans_700Bold",
+    marginTop: 3,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   modeContainer: {
     flexDirection: "row",

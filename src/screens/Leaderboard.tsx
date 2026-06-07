@@ -7,12 +7,15 @@ import {
   Dimensions,
   ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, FontAwesome5, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useTheme, useThemeMode } from "@rneui/themed";
 import { Image } from "expo-image";
+import AvatarDisplay from "../common/AvatarDisplay";
+
 
 const { width } = Dimensions.get("window");
 
@@ -117,13 +120,13 @@ export default function Leaderboard() {
   const listPlayers = leaderboardList.slice(3);
 
   return (
-    <View style={[styles.safeContainer, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.safeContainer, { backgroundColor: theme.colors.background }]}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        
+
         {/* Title Header */}
         <View style={styles.header}>
           <Ionicons name="trophy" size={28} color="#FBBF24" />
-          <Text style={[styles.headerTitle, { color: textColor }]}>KHEL PEHALWAN</Text>
+          <Text style={[styles.headerTitle, { color: textColor }]}>CHAMPIONS</Text>
           <Text style={styles.headerSubtitle}>Weekly Rankings</Text>
         </View>
 
@@ -137,7 +140,11 @@ export default function Leaderboard() {
           {podium2nd && (
             <View style={styles.podiumWrapper}>
               <View style={styles.avatarWrapper}>
-                <Text style={styles.podiumAvatar}>{podium2nd.avatar}</Text>
+                <AvatarDisplay
+                  avatar={podium2nd.avatar}
+                  size={54}
+                  textStyle={styles.podiumAvatar}
+                />
                 <View style={[styles.badgeCircle, { backgroundColor: "#A0AEC0" }]}>
                   <Text style={styles.badgeText}>2</Text>
                 </View>
@@ -157,7 +164,11 @@ export default function Leaderboard() {
             <View style={styles.podiumWrapper}>
               <View style={[styles.avatarWrapper, styles.avatarWrapperGold]}>
                 <FontAwesome5 name="crown" size={16} color="#FBBF24" style={styles.crownIcon} />
-                <Text style={styles.podiumAvatarBig}>{podium1st.avatar}</Text>
+                <AvatarDisplay
+                  avatar={podium1st.avatar}
+                  size={66}
+                  textStyle={styles.podiumAvatarBig}
+                />
                 <View style={[styles.badgeCircle, { backgroundColor: "#FBBF24" }]}>
                   <Text style={styles.badgeText}>1</Text>
                 </View>
@@ -179,7 +190,11 @@ export default function Leaderboard() {
           {podium3rd && (
             <View style={styles.podiumWrapper}>
               <View style={styles.avatarWrapper}>
-                <Text style={styles.podiumAvatar}>{podium3rd.avatar}</Text>
+                <AvatarDisplay
+                  avatar={podium3rd.avatar}
+                  size={54}
+                  textStyle={styles.podiumAvatar}
+                />
                 <View style={[styles.badgeCircle, { backgroundColor: "#CD7F32" }]}>
                   <Text style={styles.badgeText}>3</Text>
                 </View>
@@ -213,7 +228,12 @@ export default function Leaderboard() {
               >
                 <View style={styles.rowLeft}>
                   <Text style={[styles.rankNumber, { color: subTextColor }]}>{rank}</Text>
-                  <Text style={styles.rowAvatar}>{player.avatar}</Text>
+                  <AvatarDisplay
+                    avatar={player.avatar}
+                    size={40}
+                    textStyle={styles.rowAvatar}
+                    imageStyle={{ marginRight: 10 }}
+                  />
                   <Text style={[styles.rowName, { color: textColor }, player.isUser && styles.boldText]} numberOfLines={1}>
                     {player.name}
                   </Text>
@@ -241,7 +261,12 @@ export default function Leaderboard() {
           <View style={styles.userBadge}>
             <Text style={styles.userRankText}>#{userRank}</Text>
           </View>
-          <Text style={styles.bannerAvatar}>{avatar}</Text>
+          <AvatarDisplay
+            avatar={avatar}
+            size={44}
+            textStyle={styles.bannerAvatar}
+            imageStyle={{ marginRight: 10 }}
+          />
           <View style={styles.bannerUserInfo}>
             <Text style={[styles.bannerUserName, { color: textColor }]} numberOfLines={1}>
               {nickname}
@@ -254,7 +279,7 @@ export default function Leaderboard() {
           <Text style={styles.bannerSolvedCount}>{userSolvedCount} Solved</Text>
         </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -331,6 +356,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "rgba(255, 255, 255, 0.15)",
     marginBottom: 8,
+    overflow: "hidden",
   },
   avatarWrapperGold: {
     width: 66,
@@ -338,6 +364,7 @@ const styles = StyleSheet.create({
     borderRadius: 33,
     borderWidth: 2,
     borderColor: "#FBBF24",
+    overflow: "hidden",
   },
   crownIcon: {
     position: "absolute",
