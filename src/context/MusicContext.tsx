@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from "react";
+import  { createContext, useContext, useState, useEffect, useRef } from "react";
 import { AppState, AppStateStatus } from "react-native";
 import { Audio } from "expo-av";
-import { useSegments } from "expo-router";
+import { useSegments, useGlobalSearchParams } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type MusicType = "whole_app" | "quiz" | "none";
@@ -17,6 +17,7 @@ const MusicContext = createContext<MusicContextProps | undefined>(undefined);
 
 export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const segments = useSegments();
+  const params = useGlobalSearchParams();
   const [soundEnabled, setSoundEnabledState] = useState<boolean>(true);
   const [currentTrack, setCurrentTrack] = useState<MusicType>("none");
 
@@ -47,7 +48,7 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     Audio.setAudioModeAsync({
       playsInSilentModeIOS: true,
       staysActiveInBackground: false, // Don't play when user exits app completely
-      shouldRouteThroughEarpieceAndroid: false,
+      playThroughEarpieceAndroid: false,
     }).catch(err => console.warn("[MusicProvider] Error setting audio mode:", err));
 
     return () => {
@@ -74,7 +75,17 @@ export const MusicProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Determine what track should be playing based on segments
   const determineDesiredTrack = (): MusicType => {
-    if (segments && segments.includes("play")) {
+    const isTimerEnabled = params && params.timerEnabled === "true";
+    const isTimerScreen = segments && (
+      (segments as any).includes("daily-warrior") ||
+      (segments as any).includes("decipher-scroll") ||
+      (segments as any).includes("high-score-hunt") ||
+      isTimerEnabled
+    );
+    if (isTimerScreen) {
+      return "none";
+    }
+    if (segments && (segments as any).includes("play")) {
       return "quiz";
     }
     return "whole_app";

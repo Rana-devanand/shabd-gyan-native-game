@@ -30,7 +30,7 @@ export default function StreakCard({
           </Text>
         </View>
         <Text style={[styles.streakSubtext, { color: subTextColor }]}>
-          {streak > 0 ? "Bohot achhe! Kal firse khele!" : "Keep the flame burning!"}
+          {streak > 0 ? "Great job! Come back and play again tomorrow!" : "Keep the flame burning!"}
         </Text>
       </View>
 

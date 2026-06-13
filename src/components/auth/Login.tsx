@@ -121,7 +121,7 @@ export default function Login() {
       try { await GoogleSignin.signOut(); } catch (_) { }
       const userInfo = await GoogleSignin.signIn();
       const idToken = userInfo.data?.idToken;
-      if (!idToken) throw new Error("No ID Token from Google.");
+      if (!idToken) throw new Error("Cancelled Login");
       const { data, error } = await supabase.auth.signInWithIdToken({ provider: "google", token: idToken });
       if (error) throw error;
       if (data.session) {

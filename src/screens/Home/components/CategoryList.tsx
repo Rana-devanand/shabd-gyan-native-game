@@ -7,7 +7,8 @@ import * as Haptics from "expo-haptics";
 interface CategoryListProps {
   categories: any[];
   modePuzzles: any[];
-  solvedIds: string[];
+  solvedCounts: Record<string, number>;
+  categoryLimits?: Record<string, number>;
   isDark: boolean;
   textColor: string;
   onSelectCategory: (categoryName: string) => void;
@@ -18,7 +19,8 @@ const { width } = Dimensions.get("window");
 export default function CategoryList({
   categories,
   modePuzzles,
-  solvedIds,
+  solvedCounts,
+  categoryLimits,
   isDark,
   textColor,
   onSelectCategory,
@@ -38,11 +40,10 @@ export default function CategoryList({
 
       <View style={styles.grid}>
         {categories.map((cat, index) => {
-          const catPuzzles = modePuzzles.filter((p) => p.category === cat.name);
-          const catSolved = catPuzzles.filter((p) => solvedIds.includes(p.id)).length;
-          const totalPuzzles = catPuzzles.length;
-          const progressPercent = totalPuzzles > 0 ? (catSolved / totalPuzzles) * 100 : 0;
-          const isCompleted = progressPercent === 100;
+          const catSolved = solvedCounts[cat.name] || 0;
+          const totalPuzzles = categoryLimits?.[cat.name] || 1000;
+          const progressPercent = Math.min(100, (catSolved / totalPuzzles) * 100);
+          const isCompleted = catSolved >= totalPuzzles;
 
           return (
             <TouchableOpacity

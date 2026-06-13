@@ -1,0 +1,123 @@
+SHABDGYAN APP - XP RULES SUMMARY
+================================
+
+Here is the list of all XP (Experience Points) rules implemented across the different screens and modes in the Shabdgyan application.
+
+1. DAILY LOGIN STREAK
+---------------------
+* Triggered when launching the app or focusing the dashboard on a new day.
+* Reward: +10 XP
+* Side effects: Increments the daily login streak counter.
+
+
+2. CATEGORIES PLAY MODE (Standard Puzzles)
+------------------------------------------
+XP is dynamically awarded depending on the difficulty of the level and whether the user used a hint to solve it.
+
+* Without Hint:
+  - Easy: +10 XP
+  - Medium: +20 XP
+  - Hard: +30 XP
+  - Super Hard: +50 XP
+
+* With Hint (User clicked "Hint" to show clue details):
+  - Easy: +5 XP
+  - Medium: +10 XP
+  - Hard: +15 XP
+  - Super Hard: +25 XP
+
+* See Answer (User clicked "Answer" to auto-fill details):
+  - 0 XP (Revealing the correct answer gives no points).
+
+
+3. DAILY CHALLENGE (Home Screen Card)
+-------------------------------------
+* Played exactly once per day.
+* Correct Answer (Solved without revealing): +50 XP (regardless of whether a hint was used or not).
+* Failed (User revealed the answer using the "Answer" button OR submitted an incorrect answer): 0 XP.
+* Restriction: If completed (success) or failed (wrong answer/reveal), the user is blocked from playing it again today and redirected back to the home screen.
+
+
+4. MISSION BOARD / QUESTS MODE
+------------------------------
+Access to different quests on the Quest Board with specific rewards and penalties.
+
+* Daily Warrior Quest:
+  - Puzzle must be unscrambled under a 2-minute countdown timer.
+  - Success: +80 XP
+  - Failed (Time runs out, app minimized, or quest abandoned): 0 XP.
+  - Restriction: Attempt-locked to once per day.
+
+* Decipher Scroll Quest:
+  - Solving today's scroll riddle.
+  - Success: +100 XP
+  - Failed / Abandoned: 0 XP.
+  - Restriction: Attempt-locked to once per day.
+
+* High Score Hunt Quest (Speed Scramble):
+  - 30-second starting timer. Each correct answer adds the remaining time + 30 seconds to the next puzzle.
+  - Correct Answer: +130 XP
+  - Incorrect Answer: -50 XP (Deducted from the current hunt session total. Final score cannot fall below 0).
+  - Restriction: Attempt-locked to once per day.
+
+* Story Play Mode (AI Story Quest):
+  - Solving the AI story puzzle.
+  - Success: +50 XP
+  - Failed / Abandoned: 0 XP.
+
+* Secret Chest Bonus:
+  - Unlocked only when user has total score >= 500 XP AND completes all 3 active quests (Daily Warrior, Decipher Scroll, High Score Hunt).
+  - Reward: A random bonus between +50 XP and +100 XP.
+  - Restriction: Claimable once per day.
+
+
+5. HINT LIMITS & REWARDED ADS (Proposed Feature Guidelines)
+-----------------------------------------------------------
+* Free Hints: Every user gets 5 free hints initially when they start playing.
+* Hint Consumption: Tapping the "Hint" button during a puzzle consumes 1 hint from their available pool.
+* Out of Hints:
+  - When the user's hint pool is 0, the "Hint" button is locked.
+  - To unlock a hint, the user must watch a 30-second rewarded video advertisement.
+  - Successfully watching the full ad awards the user +1 hint.
+* Weekly Reset: The hint pool resets back to 5 free hints every 7 days (weekly).
+
+
+6. HEAD-START POWER-UP (Difficulty Selection Screen)
+-----------------------------------------------------
+Users can optionally pre-fill answer boxes BEFORE the puzzle begins. This gives a letter
+head-start but reduces the XP earned for that solve. Deduction stacks with hint penalty.
+
+Available Options:
+  None     - No pre-fill. Full XP awarded as normal.
+  1 Letter - First answer box pre-filled with the correct letter.
+  2 Letters- First 2 answer boxes pre-filled.
+  3 Letters- First 3 answer boxes pre-filled.
+  Random   - 2 letters revealed at randomly chosen positions.
+
+XP Deduction Table (subtracted from final award):
+
+  Difficulty  | None | 1 Letter | 2 Letters | 3 Letters | Random
+  ------------|------|----------|-----------|-----------|-------
+  Easy        |   0  |    -2    |     -4    |     -6    |   -2
+  Medium      |   0  |    -7    |    -14    |    -18    |  -14
+  Hard        |   0  |    -6    |    -10    |    -15    |  -10
+  Super Hard  |   0  |    -2    |     -4    |     -6    |   -2
+
+Effective XP Examples (no hint used):
+  Easy   + 1 Letter  = 10 - 2  = +8 XP
+  Easy   + 2 Letters = 10 - 4  = +6 XP
+  Easy   + 3 Letters = 10 - 6  = +4 XP
+  Medium + 1 Letter  = 20 - 7  = +13 XP
+  Medium + 2 Letters = 20 - 14 = +6 XP
+  Medium + 3 Letters = 20 - 18 = +2 XP
+  Hard   + 1 Letter  = 30 - 6  = +24 XP
+  Hard   + 3 Letters = 30 - 15 = +15 XP
+  Super Hard + Random = 50 - 2 = +48 XP
+
+Stacking Rules:
+  * Head-start AND hint deductions both apply at the same time.
+    Example: Medium + 2 Letters + hint = max(0, 10 - 14) = 0 XP.
+  * Final XP is always clamped to minimum 0 (never negative).
+  * Replay practice (already-solved slot) gives 0 XP regardless of head-start.
+  * Daily Challenge is EXEMPT from head-start penalty (always flat +50 XP).
+  * The XP info card on the Difficulty Screen updates live as the user picks an option.

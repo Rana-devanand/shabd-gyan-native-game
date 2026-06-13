@@ -9,7 +9,17 @@ import {
   ActivityIndicator,
   Animated,
   Easing,
+  Modal,
+  LayoutAnimation,
+  Platform,
+  UIManager,
 } from "react-native";
+
+if (Platform.OS === "android") {
+  if (UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
+}
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -18,15 +28,35 @@ import { Ionicons, FontAwesome5, MaterialCommunityIcons } from "@expo/vector-ico
 import { useTheme, useThemeMode } from "@rneui/themed";
 import * as Haptics from "expo-haptics";
 import { showMessage } from "react-native-flash-message";
+import { Audio } from "expo-av";
+import { useMusic } from "@/src/context/MusicContext";
+import { stopSpeech } from "@/src/utils/ttsHelper";
 
 import { PUZZLES, CATEGORIES, PAHELI_PUZZLES, Puzzle } from "@/src/constants/puzzles";
 import { generatePuzzle } from "@/src/services/groqService";
+import { awardXP } from "@/src/utils/xpHelper";
+import { savePlayedQuiz, saveSolvedPuzzle, recordAdWatched } from "@/src/services/databaseService";
+import { useRewardedAd, TestIds } from "react-native-google-mobile-ads";
+
+const AD_UNIT_ID = __DEV__ ? TestIds.REWARDED : "ca-app-pub-4526433011293142/7471565982";
 
 const { width } = Dimensions.get("window");
 const TILE_SIZE = (width - 80) / 5;
 
+// Head-Start XP deductions (must match difficulty.tsx table)
+const HEAD_START_DEDUCTIONS: Record<string, Record<string, number>> = {
+  Easy:         { "0": 0, "1": 2,  "2": 4,  "3": 6,  random: 2  },
+  Medium:       { "0": 0, "1": 7,  "2": 14, "3": 18, random: 14 },
+  Hard:         { "0": 0, "1": 6,  "2": 10, "3": 15, random: 10 },
+  "Super Hard": { "0": 0, "1": 2,  "2": 4,  "3": 6,  random: 2  },
+};
+
+function getHsDeduction(diff: string, hs: string | undefined): number {
+  return HEAD_START_DEDUCTIONS[diff]?.[hs || "0"] ?? 0;
+}
+
 export default function PlayScreen() {
-  const { categoryName, difficulty, dynamic } = useLocalSearchParams<{ categoryName: string; difficulty: string; dynamic?: string }>();
+  const { categoryName, difficulty, dynamic, storyChapterId, timerEnabled, headStart } = useLocalSearchParams<{ categoryName: string; difficulty: string; dynamic?: string; storyChapterId?: string; timerEnabled?: string; headStart?: string }>();
   const router = useRouter();
   const { theme } = useTheme();
   const { mode } = useThemeMode();
@@ -36,8 +66,8 @@ export default function PlayScreen() {
   const subTextColor = isDark ? "#94A3B8" : "#475569";
   const cardBg = isDark ? "#05203B" : "#FFFFFF";
   const borderColor = isDark ? "#072C50" : "#E2E8F0";
-  const bgGradients = isDark ? ["#021122", "#0b203c", "#021122"] : ["#F8FAFC", "#F1F5F9", "#E2E8F0"];
-  const clueGradients = isDark ? ["#0A1D37", "#21103E"] : ["#E0F2FE", "#EFF6FF"];
+  const bgGradients = (isDark ? ["#021122", "#0b203c", "#021122"] : ["#F8FAFC", "#F1F5F9", "#E2E8F0"]) as [string, string, ...string[]];
+  const clueGradients = (isDark ? ["#0A1D37", "#21103E"] : ["#E0F2FE", "#EFF6FF"]) as [string, string, ...string[]];
   const clueTextColor = isDark ? "#FFFFFF" : "#0F172A";
   const clueDifficultyColor = isDark ? "#60A5FA" : "#2563EB";
   const hintBg = isDark ? "rgba(245, 158, 11, 0.12)" : "rgba(245, 158, 11, 0.08)";
@@ -56,6 +86,55 @@ export default function PlayScreen() {
   const [loadedPuzzle, setLoadedPuzzle] = useState<Puzzle | null>(null);
   const [loadingNext, setLoadingNext] = useState(false);
 
+  // Hint Inventory & Ad Simulator
+  const [hintsRemaining, setHintsRemaining] = useState(5);
+  const [showHintAdModal, setShowHintAdModal] = useState(false);
+  const [hintAdTimeLeft, setHintAdTimeLeft] = useState(30);
+  const hintAdTimerRef = useRef<any>(null);
+
+  // Real Rewarded Ad Hook
+  const [isRealAdShowing, setIsRealAdShowing] = useState(false);
+  const { isLoaded, isClosed, load, show, reward } = useRewardedAd(AD_UNIT_ID);
+
+  // Load real ad on mount
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  // Handle real ad state transitions
+  useEffect(() => {
+    if (isClosed) {
+      setIsRealAdShowing(false);
+      if (reward) {
+        awardHintFromRealAd();
+      } else {
+        showMessage({
+          message: "Ad Closed Early ⚠️",
+          description: "Watch the full ad to unlock the hint.",
+          type: "warning",
+        });
+      }
+      load(); // Reload next ad
+    }
+  }, [isClosed, reward, load]);
+
+  const awardHintFromRealAd = async () => {
+    try {
+      const newHints = hintsRemaining + 1;
+      setHintsRemaining(newHints);
+      await AsyncStorage.setItem("shabdgyan_hints_remaining", String(newHints));
+      setShowHint(true);
+      await recordAdWatched("rewarded", "hint_reveal");
+      showMessage({
+        message: "Hint Unlocked! 💡",
+        description: "You watched the full ad. +1 Hint awarded & revealed!",
+        type: "success",
+      });
+    } catch (e) {
+      console.warn("[PlayScreen] Failed to award hint after ad:", e);
+    }
+  };
+
   // Gameplay State
   const [activePuzzle, setActivePuzzle] = useState<Puzzle | null>(null);
   const [scrambledLetters, setScrambledLetters] = useState<
@@ -66,6 +145,16 @@ export default function PlayScreen() {
   >([]);
   const [showHint, setShowHint] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
+  const [answerRevealed, setAnswerRevealed] = useState(false);
+  const [earnedPoints, setEarnedPoints] = useState(0);
+
+  // Timer states
+  const [timeLeft, setTimeLeft] = useState(59);
+  const [showTimeUpModal, setShowTimeUpModal] = useState(false);
+  
+  const { soundEnabled } = useMusic();
+  const tickSoundRef = useRef<Audio.Sound | null>(null);
+  const bgMusicRef = useRef<Audio.Sound | null>(null);
 
   // Load progress
   useEffect(() => {
@@ -96,6 +185,32 @@ export default function PlayScreen() {
             setDynamicPuzzle(localFallback);
           }
         }
+
+        // Load hints remaining and handle weekly reset
+        const hintsStr = await AsyncStorage.getItem("shabdgyan_hints_remaining");
+        const lastResetStr = await AsyncStorage.getItem("shabdgyan_hints_last_reset");
+        const now = Date.now();
+        const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
+
+        let hintsVal = 5;
+        if (hintsStr) {
+          hintsVal = parseInt(hintsStr, 10);
+        }
+
+        if (lastResetStr) {
+          const lastReset = parseInt(lastResetStr, 10);
+          if (now - lastReset >= ONE_WEEK) {
+            hintsVal = 5;
+            await AsyncStorage.setItem("shabdgyan_hints_remaining", "5");
+            await AsyncStorage.setItem("shabdgyan_hints_last_reset", String(now));
+          }
+        } else {
+          await AsyncStorage.setItem("shabdgyan_hints_last_reset", String(now));
+          if (!hintsStr) {
+            await AsyncStorage.setItem("shabdgyan_hints_remaining", "5");
+          }
+        }
+        setHintsRemaining(hintsVal);
       } catch (error) {
         console.error("Error loading play stats:", error);
       } finally {
@@ -104,7 +219,139 @@ export default function PlayScreen() {
     };
 
     loadState();
+
+    return () => {
+      if (hintAdTimerRef.current) {
+        clearInterval(hintAdTimerRef.current);
+      }
+    };
   }, []);
+
+  // 59s Countdown Timer Ticking Loop
+  useEffect(() => {
+    if (timerEnabled !== "true") return;
+    if (loading || fetchingGroq || (dynamic === "true" && !dynamicPuzzle) || !activePuzzle) return;
+    if (isCorrect || answerRevealed || showTimeUpModal || showHintAdModal || isRealAdShowing) return;
+
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          handleTimeUp();
+          return 0;
+        }
+        // Add subtle haptic tick when time is running low (<= 5 seconds)
+        if (prev <= 6) {
+          try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch {}
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [loading, fetchingGroq, dynamic, dynamicPuzzle, activePuzzle, isCorrect, answerRevealed, timerEnabled, showTimeUpModal, showHintAdModal, isRealAdShowing]);
+
+  const handleTimeUp = async () => {
+    try {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } catch {}
+    
+    // Stop any active text-to-speech
+    try {
+      await stopSpeech();
+    } catch {}
+
+    // Play game over music
+    if (soundEnabled) {
+      try {
+        const { sound: goSound } = await Audio.Sound.createAsync(
+          require("../../assets/game_music/game_over_music.mp3"),
+          { shouldPlay: true, isLooping: false, volume: 0.5 }
+        );
+        goSound.setOnPlaybackStatusUpdate((status) => {
+          if (status.isLoaded && status.didJustFinish) {
+            goSound.unloadAsync().catch(() => {});
+          }
+        });
+      } catch (err) {
+        console.warn("Error playing game over sound:", err);
+      }
+    }
+
+    setShowTimeUpModal(true);
+  };
+
+  // Load and play ticking and background clock music during gameplay
+  useEffect(() => {
+    let active = true;
+
+    const startAudio = async () => {
+      if (!soundEnabled || timerEnabled !== "true") return;
+      try {
+        // Stop/unload existing first just in case
+        if (tickSoundRef.current) {
+          try { await tickSoundRef.current.unloadAsync(); } catch (e) {}
+        }
+        if (bgMusicRef.current) {
+          try { await bgMusicRef.current.unloadAsync(); } catch (e) {}
+        }
+
+        // Load tick-tick sound
+        const { sound: tickSound } = await Audio.Sound.createAsync(
+          require("../../assets/game_music/clock_tick_tick.mp3"),
+          { shouldPlay: true, isLooping: true, volume: 0.3 }
+        );
+        if (active) {
+          tickSoundRef.current = tickSound;
+        } else {
+          await tickSound.unloadAsync();
+        }
+
+        // Load background clock music
+        const { sound: bgMusic } = await Audio.Sound.createAsync(
+          require("../../assets/game_music/clock_based_musix.mp3"),
+          { shouldPlay: true, isLooping: true, volume: 0.3 }
+        );
+        if (active) {
+          bgMusicRef.current = bgMusic;
+        } else {
+          await bgMusic.unloadAsync();
+        }
+      } catch (err) {
+        console.warn("Error starting countdown audio:", err);
+      }
+    };
+
+    if (timerEnabled === "true" && activePuzzle && !isCorrect && !answerRevealed && !showTimeUpModal) {
+      startAudio();
+    } else {
+      // If we are not playing or game ended, stop sounds
+      if (tickSoundRef.current) {
+        tickSoundRef.current.stopAsync().catch(() => {});
+        tickSoundRef.current.unloadAsync().catch(() => {});
+        tickSoundRef.current = null;
+      }
+      if (bgMusicRef.current) {
+        bgMusicRef.current.stopAsync().catch(() => {});
+        bgMusicRef.current.unloadAsync().catch(() => {});
+        bgMusicRef.current = null;
+      }
+    }
+
+    return () => {
+      active = false;
+      if (tickSoundRef.current) {
+        tickSoundRef.current.stopAsync().catch(() => {});
+        tickSoundRef.current.unloadAsync().catch(() => {});
+        tickSoundRef.current = null;
+      }
+      if (bgMusicRef.current) {
+        bgMusicRef.current.stopAsync().catch(() => {});
+        bgMusicRef.current.unloadAsync().catch(() => {});
+        bgMusicRef.current = null;
+      }
+    };
+  }, [timerEnabled, activePuzzle, isCorrect, answerRevealed, showTimeUpModal, soundEnabled]);
 
   const modePuzzles = gameMode === "shabd" ? PUZZLES : PAHELI_PUZZLES;
   const catPuzzles = modePuzzles.filter((p) => p.category === categoryName);
@@ -163,6 +410,10 @@ export default function PlayScreen() {
     setActivePuzzle(puzzle);
     setIsCorrect(false);
     setShowHint(false);
+    setAnswerRevealed(false);
+    setEarnedPoints(0);
+    setTimeLeft(59);
+    setShowTimeUpModal(false);
 
     // Prepare letters: answer letters + decoy letters
     const answerArr = puzzle.answer.toUpperCase().split("");
@@ -174,8 +425,53 @@ export default function PlayScreen() {
       .map((letter, index) => ({ letter, tapped: false, index }))
       .sort(() => Math.random() - 0.5);
 
+    // ── Head-Start: pre-fill answer letters ──────────────────────────────────
+    const isRandomMode = (headStart as string) === "random";
+    const headStartCount = isRandomMode
+      ? Math.max(1, Math.min(2, answerArr.length - 1))      // "random": reveal 2 letters (capped so ≥1 remains)
+      : Math.min(Math.max(0, parseInt((headStart as string) || "0", 10)), answerArr.length);
+
+    const initialSelected: Array<{ letter: string; scrambledIndex: number; originalScrambledIndex: number } | null> =
+      new Array(answerArr.length).fill(null);
+
+    if (headStartCount > 0) {
+      // Choose which answer-slot indices to pre-fill
+      let slotIndices: number[];
+      if (isRandomMode) {
+        // Pick `headStartCount` distinct random slot indices
+        const allIndices = Array.from({ length: answerArr.length }, (_, i) => i);
+        // Fisher-Yates shuffle, take first headStartCount
+        for (let i = allIndices.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [allIndices[i], allIndices[j]] = [allIndices[j], allIndices[i]];
+        }
+        slotIndices = allIndices.slice(0, headStartCount);
+      } else {
+        // Sequential: 0, 1, 2 … headStartCount-1
+        slotIndices = Array.from({ length: headStartCount }, (_, i) => i);
+      }
+
+      // For each chosen slot, find and mark the matching scrambled tile
+      const used = new Set<number>();
+      for (const slotIdx of slotIndices) {
+        const targetLetter = answerArr[slotIdx];
+        const tileIdx = scrambled.findIndex(
+          (t, idx) => !used.has(idx) && t.letter === targetLetter
+        );
+        if (tileIdx !== -1) {
+          scrambled[tileIdx].tapped = true;
+          used.add(tileIdx);
+          initialSelected[slotIdx] = {
+            letter: targetLetter,
+            scrambledIndex: tileIdx,
+            originalScrambledIndex: scrambled[tileIdx].index,
+          };
+        }
+      }
+    }
+
     setScrambledLetters(scrambled);
-    setSelectedLetters(new Array(puzzle.answer.length).fill(null));
+    setSelectedLetters(initialSelected);
   };
 
   // Tap a scrambled tile
@@ -217,9 +513,13 @@ export default function PlayScreen() {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch (e) { }
 
-    // Set scrambled tile to untapped
-    const newScrambled = [...scrambledLetters];
-    newScrambled[slotItem.originalScrambledIndex].tapped = false;
+    // Set scrambled tile to untapped using its permanent index identifier
+    const newScrambled = scrambledLetters.map((tile) => {
+      if (tile.index === slotItem.scrambledIndex) {
+        return { ...tile, tapped: false };
+      }
+      return tile;
+    });
     setScrambledLetters(newScrambled);
 
     // Empty this slot
@@ -241,9 +541,53 @@ export default function PlayScreen() {
     setSelectedLetters(new Array(activePuzzle.answer.length).fill(null));
   };
 
+  // Shuffle scrambled letters pool with ease-in-out animation
+  const handleShuffle = () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch (e) {}
+
+    // Configure layout animation
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+    setScrambledLetters((prev) => {
+      const shuffled = [...prev];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      // Re-map array indexes for any ongoing selection references
+      return shuffled;
+    });
+  };
+
   // Auto-fill the correct answer into slots
   const handleSeeAnswer = async () => {
     if (!activePuzzle || isCorrect) return;
+    setAnswerRevealed(true);
+
+    if (dynamic === "true") {
+      const todayStr = new Date().toISOString().split("T")[0];
+      await AsyncStorage.setItem("shabdgyan_daily_challenge_completed_date", todayStr);
+      await AsyncStorage.setItem("shabdgyan_daily_challenge_status", "failed");
+    }
+
+    try {
+      await savePlayedQuiz({
+        puzzleId: activePuzzle.id,
+        category: activePuzzle.category,
+        difficulty: difficulty || "Easy",
+        mode: dynamic === "true" ? "daily_challenge" : gameMode,
+        question: activePuzzle.clue,
+        answer: activePuzzle.answer,
+        usedHint: showHint,
+        revealedAnswer: true,
+        coinsEarned: 0,
+        userAnswer: ""
+      });
+    } catch (e) {
+      console.warn("[PlayScreen] Failed to save played quiz to Supabase:", e);
+    }
 
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -272,6 +616,50 @@ export default function PlayScreen() {
 
     setScrambledLetters(tempScrambled);
     setSelectedLetters(newSelected);
+  };
+
+  // Start the Hint Ad Simulation Timer
+  const startHintAdSimulation = () => {
+    setShowHintAdModal(true);
+    setHintAdTimeLeft(30);
+    if (hintAdTimerRef.current) {
+      clearInterval(hintAdTimerRef.current);
+    }
+    hintAdTimerRef.current = setInterval(() => {
+      setHintAdTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(hintAdTimerRef.current!);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  // Close the ad modal, award +1 hint, log it, and reveal the hint
+  const closeHintAdAndReward = async () => {
+    if (hintAdTimeLeft > 0) return;
+    setShowHintAdModal(false);
+
+    try {
+      const newHints = hintsRemaining + 1;
+      setHintsRemaining(newHints);
+      await AsyncStorage.setItem("shabdgyan_hints_remaining", String(newHints));
+      
+      // Auto-unlock the hint since they watched the ad
+      setShowHint(true);
+
+      // Log ad watch to database
+      await recordAdWatched("rewarded", "hint_reveal");
+
+      showMessage({
+        message: "Hint Unlocked! 💡",
+        description: "You watched the full ad. +1 Hint awarded & revealed!",
+        type: "success",
+      });
+    } catch (e) {
+      console.warn("[PlayScreen] Failed to award hint after ad:", e);
+    }
   };
 
   // Delete letters one by one from right to left (Backspace)
@@ -309,7 +697,7 @@ export default function PlayScreen() {
     if (selectedLetters.some((item) => item === null)) {
       showMessage({
         message: "Word Incomplete ⚠️",
-        description: "Pehle saare letter slots fill kijiye!",
+        description: "Please fill all the letter slots first!",
         type: "warning",
       });
       return;
@@ -329,23 +717,120 @@ export default function PlayScreen() {
     if (userWord === correctWord && activePuzzle) {
       setIsCorrect(true);
 
+      // Record daily challenge completed date
+      if (dynamic === "true") {
+        const todayStr = new Date().toISOString().split("T")[0];
+        await AsyncStorage.setItem("shabdgyan_daily_challenge_completed_date", todayStr);
+        const currentStatus = await AsyncStorage.getItem("shabdgyan_daily_challenge_status");
+        if (currentStatus !== "failed") {
+          await AsyncStorage.setItem("shabdgyan_daily_challenge_status", "success");
+        }
+      }
+
       try {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch (e) { }
 
       // Update storage and states
       const puzzleId = activePuzzle.id;
-      const alreadySolved = solvedIds.includes(puzzleId);
-      const updatedSolved = alreadySolved ? solvedIds : [...solvedIds, puzzleId];
 
-      if (!alreadySolved) {
-        setSolvedIds(updatedSolved);
-        await AsyncStorage.setItem("shabdgyan_solved_ids", JSON.stringify(updatedSolved));
+      // ── Determine the canonical slot key ─────────────────────────────────
+      // For story chapters: use storyChapterId
+      // For daily challenge:  use the dynamic puzzle's own id
+      // For category play:   use a stable slot key "mode_category_difficulty"
+      //   (NOT the local static puzzle id, which would permanently block XP
+      //    after the first solve because local ids never change)
+      const slotKey = storyChapterId
+        ? storyChapterId
+        : dynamic === "true"
+        ? puzzleId
+        : `${gameMode}_${categoryName}_${difficulty}`;
 
-        // Add 100 Points
-        const newScore = score + 100;
-        setScore(newScore);
-        await AsyncStorage.setItem("shabdgyan_score", newScore.toString());
+      const staticPuzzleId = slotKey;
+      const alreadySolved = solvedIds.includes(staticPuzzleId);
+      
+      // Update local solved list with BOTH slot ID and dynamic ID
+      let nextSolvedIds = [...solvedIds];
+      let hasChanged = false;
+      if (staticPuzzleId && !solvedIds.includes(staticPuzzleId)) {
+        nextSolvedIds.push(staticPuzzleId);
+        hasChanged = true;
+      }
+      if (puzzleId && !solvedIds.includes(puzzleId)) {
+        nextSolvedIds.push(puzzleId);
+        hasChanged = true;
+      }
+      const updatedSolved = hasChanged ? nextSolvedIds : solvedIds;
+
+      if (!alreadySolved || dynamic === "true") {
+        if (hasChanged) {
+          setSolvedIds(updatedSolved);
+          await AsyncStorage.setItem("shabdgyan_solved_ids", JSON.stringify(updatedSolved));
+        }
+
+        // Calculate dynamic XP based on difficulty, hint, answer-reveal, and head-start
+        let pointsToAward = 0;
+        if (!answerRevealed) {
+          const diff = difficulty || "Easy";
+          const hsDeduction = getHsDeduction(diff, headStart as string);
+          if (dynamic === "true") {
+            // Daily challenge: flat 50, no head-start penalty for dynamic mode
+            pointsToAward = 50;
+          } else {
+            if (showHint) {
+              if (diff === "Easy") pointsToAward = 5;
+              else if (diff === "Medium") pointsToAward = 10;
+              else if (diff === "Hard") pointsToAward = 15;
+              else if (diff === "Super Hard") pointsToAward = 25;
+            } else {
+              if (diff === "Easy") pointsToAward = 10;
+              else if (diff === "Medium") pointsToAward = 20;
+              else if (diff === "Hard") pointsToAward = 30;
+              else if (diff === "Super Hard") pointsToAward = 50;
+            }
+            // Apply head-start penalty (cannot go below 0)
+            pointsToAward = Math.max(0, pointsToAward - hsDeduction);
+          }
+        }
+        setEarnedPoints(pointsToAward);
+
+        const finalScore = await awardXP(
+          pointsToAward,
+          dynamic === "true" ? "daily_challenge_completed" : "puzzle_solved",
+          staticPuzzleId
+        );
+        setScore(finalScore);
+
+        // Save played quiz to Supabase
+        try {
+          await savePlayedQuiz({
+            puzzleId: puzzleId,
+            category: activePuzzle.category,
+            difficulty: difficulty || "Easy",
+            mode: dynamic === "true" ? "daily_challenge" : gameMode,
+            question: activePuzzle.clue,
+            answer: activePuzzle.answer,
+            usedHint: showHint,
+            revealedAnswer: false,
+            coinsEarned: pointsToAward,
+            userAnswer: activePuzzle.answer
+          });
+        } catch (e) {
+          console.warn("[PlayScreen] Failed to save played quiz on win:", e);
+        }
+
+        // Sync to user_solved_puzzles in database.
+        // IMPORTANT: Only call this with a real puzzle ID that exists in the `puzzles` table.
+        // Slot keys like "shabd_Fruits & Food_Easy" are NOT real puzzle IDs and will violate
+        // the FK constraint on user_solved_puzzles.puzzle_id.
+        // Story chapters pass their own real chapter ID, so those are safe.
+        if (dynamic !== "true" && storyChapterId) {
+          try {
+            await saveSolvedPuzzle(staticPuzzleId);
+          } catch (e) {
+            console.warn("[PlayScreen] Failed to save solved puzzle:", e);
+          }
+        }
 
         // Increment Streak
         const newStreak = streak + 1;
@@ -367,7 +852,7 @@ export default function PlayScreen() {
           word: activePuzzle.answer,
           clue: activePuzzle.clue,
           category: activePuzzle.category,
-          points: 100,
+          points: pointsToAward,
           solvedAt: new Date().toLocaleDateString("en-IN", {
             day: "numeric",
             month: "short",
@@ -375,14 +860,66 @@ export default function PlayScreen() {
           }),
         };
         await AsyncStorage.setItem("shabdgyan_history", JSON.stringify([solvedItem, ...history]));
+      } else {
+        // REPLAY PRACTICE (alreadySolved is true and dynamic is false)
+        setEarnedPoints(0);
+        try {
+          await savePlayedQuiz({
+            puzzleId: puzzleId,
+            category: activePuzzle.category,
+            difficulty: difficulty || "Easy",
+            mode: gameMode,
+            question: activePuzzle.clue,
+            answer: activePuzzle.answer,
+            usedHint: showHint,
+            revealedAnswer: false,
+            coinsEarned: 0,
+            userAnswer: activePuzzle.answer
+          });
+        } catch (e) {
+          console.warn("[PlayScreen] Failed to save practice played quiz to Supabase:", e);
+        }
+      }
+
+      // Increment local category solved counts in AsyncStorage
+      try {
+        const solvedCountsStr = await AsyncStorage.getItem("shabdgyan_solved_counts");
+        const counts = solvedCountsStr ? JSON.parse(solvedCountsStr) : { shabd: {}, paheli: {} };
+        const modeKey = gameMode;
+        if (!counts[modeKey]) {
+          counts[modeKey] = {};
+        }
+        const catName = activePuzzle.category;
+        counts[modeKey][catName] = (counts[modeKey][catName] || 0) + 1;
+        await AsyncStorage.setItem("shabdgyan_solved_counts", JSON.stringify(counts));
+      } catch (e) {
+        console.warn("[PlayScreen] Failed to update local solved counts:", e);
       }
     } else {
       try {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       } catch (e) { }
+
+      if (dynamic === "true") {
+        const todayStr = new Date().toISOString().split("T")[0];
+        await AsyncStorage.setItem("shabdgyan_daily_challenge_completed_date", todayStr);
+        await AsyncStorage.setItem("shabdgyan_daily_challenge_status", "failed");
+
+        showMessage({
+          message: "Incorrect Answer! ❌",
+          description: "Incorrect answer! You cannot attempt today's challenge again. Come back tomorrow!",
+          type: "danger",
+          duration: 3500,
+        });
+
+        // Redirect to dashboard
+        router.replace("/(authenticated)/(tabs)");
+        return;
+      }
+
       showMessage({
-        message: "Opps! Galat Jawab ❌",
-        description: "Tiles ko sahi order mein jamayein!",
+        message: "Oops! Incorrect Answer ❌",
+        description: "Arrange the tiles in the correct order!",
         type: "danger",
         duration: 1500,
       });
@@ -482,15 +1019,15 @@ export default function PlayScreen() {
       >
         <SafeAreaView style={styles.loaderContent}>
           <Animated.View style={{ transform: [{ rotate: spin }] }}>
-            <MaterialCommunityIcons name="brain" size={64} color="#A2EBD0" />
+            <MaterialCommunityIcons name="loading" size={64} color="#A2EBD0" />
           </Animated.View>
 
           <Animated.View style={[styles.loaderTextBox, { opacity: pulseValue }]}>
             <Text style={styles.loaderText}>GENERATING PUZZLE...</Text>
-            <Text style={styles.loaderSubText}>Aapke liye sawal taiyar kiya ja raha hai</Text>
+            <Text style={styles.loaderSubText}>Generating question for your</Text>
           </Animated.View>
 
-          <ActivityIndicator size="small" color="#A2EBD0" style={{ marginTop: 20 }} />
+          {/* <ActivityIndicator size="small" color="#A2EBD0" style={{ marginTop: 20 }} /> */}
         </SafeAreaView>
       </LinearGradient>
     );
@@ -561,6 +1098,30 @@ export default function PlayScreen() {
               <MaterialCommunityIcons name="fire" size={13} color="#EF4444" />
               <Text style={[styles.headerStatText, { color: isDark ? "#FFFFFF" : "#334155" }]}>{streak} Streak</Text>
             </View>
+            {timerEnabled === "true" && (
+              <View style={[
+                styles.headerStatPill,
+                { 
+                  borderColor: timeLeft <= 15 ? "#EF4444" : timeLeft <= 30 ? "#F59E0B" : "#10B981", 
+                  backgroundColor: timeLeft <= 15 ? "rgba(239, 68, 68, 0.12)" : timeLeft <= 30 ? "rgba(245, 158, 11, 0.12)" : "rgba(16, 185, 129, 0.12)" 
+                }
+              ]}>
+                <Ionicons 
+                  name="time-outline" 
+                  size={13} 
+                  color={timeLeft <= 15 ? "#EF4444" : timeLeft <= 30 ? "#F59E0B" : "#10B981"} 
+                />
+                <Text style={[
+                  styles.headerStatText, 
+                  { 
+                    color: timeLeft <= 15 ? "#EF4444" : timeLeft <= 30 ? "#F59E0B" : "#10B981", 
+                    fontWeight: "bold" 
+                  }
+                ]}>
+                  {timeLeft}s
+                </Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.statsContainerRight}>
@@ -582,21 +1143,56 @@ export default function PlayScreen() {
             </TouchableOpacity>
 
             {/* Hint Button */}
-            <TouchableOpacity
-              activeOpacity={0.7}
-              onPress={() => {
-                try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch (e) { }
-                setShowHint(!showHint);
-              }}
-              style={[
-                styles.headerStatPill,
-                { backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)", borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)" },
-                showHint && { borderColor: "#FBBF24", backgroundColor: "rgba(251, 191, 36, 0.12)" }
-              ]}
-            >
-              <MaterialCommunityIcons name="lightbulb-on" size={13} color="#FBBF24" />
-              <Text style={[styles.headerStatText, { color: isDark ? "#FFFFFF" : "#334155" }]}>Hint</Text>
-            </TouchableOpacity>
+            {hintsRemaining > 0 ? (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={async () => {
+                  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch (e) { }
+                  
+                  if (!showHint) {
+                    const newHints = Math.max(0, hintsRemaining - 1);
+                    setHintsRemaining(newHints);
+                    await AsyncStorage.setItem("shabdgyan_hints_remaining", String(newHints));
+                    setShowHint(true);
+                    showMessage({
+                      message: "Hint Unlocked! 💡",
+                      description: `1 hint consumed. You have ${newHints} hints left.`,
+                      type: "info",
+                    });
+                  } else {
+                    setShowHint(false);
+                  }
+                }}
+                style={[
+                  styles.headerStatPill,
+                  { backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)", borderColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)" },
+                  showHint && { borderColor: "#FBBF24", backgroundColor: "rgba(251, 191, 36, 0.12)" }
+                ]}
+              >
+                <MaterialCommunityIcons name="lightbulb-on" size={13} color="#FBBF24" />
+                <Text style={[styles.headerStatText, { color: isDark ? "#FFFFFF" : "#334155" }]}>Hint ({hintsRemaining})</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => {
+                  try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch (e) { }
+                  if (isLoaded) {
+                    setIsRealAdShowing(true);
+                    show();
+                  } else {
+                    startHintAdSimulation();
+                  }
+                }}
+                style={[
+                  styles.headerStatPill,
+                  { borderColor: "#EF4444", backgroundColor: "rgba(239, 68, 68, 0.1)" }
+                ]}
+              >
+                <Ionicons name="play-circle-outline" size={13} color="#EF4444" style={{ marginRight: 2 }} />
+                <Text style={[styles.headerStatText, { color: "#EF4444", fontWeight: "bold" }]}>Watch Ad</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -632,31 +1228,11 @@ export default function PlayScreen() {
                 onPress={() => handleRemoveSelected(idx)}
                 style={[
                   styles.slotBox,
-                  {
-                    width: slotWidth,
-                    height: slotHeight,
-                    borderWidth: 1,
-                  },
-                  slot
-                    ? {
-                      borderColor: isDark ? "#A2EBD0" : "#10B981",
-                      backgroundColor: isDark ? "rgba(162, 235, 208, 0.12)" : "rgba(16, 185, 129, 0.08)"
-                    }
-                    : {
-                      borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.12)",
-                      backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : "rgba(0, 0, 0, 0.02)",
-                    },
+                  { width: slotWidth, height: slotHeight },
+                  slot ? styles.slotFilled : styles.slotEmpty,
                 ]}
               >
-                <Text
-                  style={[
-                    styles.slotLetter,
-                    {
-                      fontSize: slotFontSize,
-                      color: slot ? (isDark ? "#A2EBD0" : "#065F46") : textColor
-                    }
-                  ]}
-                >
+                <Text style={[styles.slotLetter, { fontSize: slotFontSize }]}>
                   {slot ? slot.letter : ""}
                 </Text>
               </TouchableOpacity>
@@ -676,10 +1252,29 @@ export default function PlayScreen() {
           {/* Letter Tiles Section */}
           <View style={styles.sectionHeaderRow}>
             <Text style={[styles.sectionTitle, { color: subTextColor }]}>LETTER TILES</Text>
-            <Text style={[styles.sectionMeta, { color: subTextColor }]}>Tap to insert</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <Text style={[styles.sectionMeta, { color: subTextColor }]}>Tap to insert</Text>
+              <TouchableOpacity
+                onPress={handleShuffle}
+                activeOpacity={0.7}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor: "rgba(126, 87, 194, 0.12)",
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: "rgba(126, 87, 194, 0.25)",
+                  gap: 4,
+                }}
+              >
+                <Ionicons name="shuffle-outline" size={13} color="#7E57C2" />
+                <Text style={{ fontSize: 10, fontWeight: "bold", color: "#7E57C2", fontFamily: "PlusJakartaSans_700Bold" }}>SHUFFLE</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
-          {/* Scrambled letters tiles pool */}
           <View style={styles.scrambledTilesGrid}>
             {scrambledLetters.map((tile, idx) => (
               <TouchableOpacity
@@ -689,23 +1284,13 @@ export default function PlayScreen() {
                 disabled={tile.tapped || isCorrect}
                 style={[
                   styles.tileButton,
-                  { borderWidth: 1 },
-                  tile.tapped
-                    ? {
-                      backgroundColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(0, 0, 0, 0.04)",
-                      borderColor: isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.1)"
-                    }
-                    : { backgroundColor: "#8B5CF6", borderColor: "#A78BFA" },
+                  tile.tapped ? styles.tileTapped : styles.tileActive,
                 ]}
               >
                 <Text
                   style={[
                     styles.tileLetter,
-                    {
-                      color: tile.tapped
-                        ? (isDark ? "rgba(255, 255, 255, 0.25)" : "rgba(0, 0, 0, 0.25)")
-                        : "#FFFFFF"
-                    },
+                    tile.tapped && styles.tileLetterTapped,
                   ]}
                 >
                   {tile.letter}
@@ -753,6 +1338,45 @@ export default function PlayScreen() {
           </View>
         </View>
 
+        {/* Time's Up Overlay */}
+        {showTimeUpModal && (
+          <View style={styles.victoryOverlay}>
+            <View style={styles.victoryCard}>
+              <LinearGradient
+                colors={["#EF4444", "#DC2626"]}
+                style={styles.victoryGradient}
+              >
+                <Ionicons name="alarm-outline" size={48} color="#FFFFFF" style={styles.victoryIcon} />
+                <Text style={styles.victoryTitle}>Time's Up! ⏰</Text>
+                <Text style={[styles.victoryPoints, { color: "#FFFFFF", opacity: 0.9 }]}>Better luck next time!</Text>
+
+                <View style={styles.solvedWordDetails}>
+                  <Text style={styles.solvedWordLabel}>Correct Answer was:</Text>
+                  <Text style={styles.solvedWordText}>{activePuzzle.answer.toUpperCase()}</Text>
+                  <Text style={styles.solvedWordClue}>"{activePuzzle.clue}"</Text>
+                </View>
+
+                <View style={styles.victoryActionRow}>
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={async () => {
+                      try { await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); } catch {}
+                      setShowTimeUpModal(false);
+                      router.replace("/(authenticated)/(tabs)");
+                    }}
+                    style={[styles.nextPuzzleButton, { backgroundColor: "#FFFFFF" }]}
+                  >
+                    <Text style={[styles.nextPuzzleButtonText, { color: "#EF4444" }]}>
+                      Back to Home
+                    </Text>
+                    <Ionicons name="home-outline" size={18} color="#EF4444" />
+                  </TouchableOpacity>
+                </View>
+              </LinearGradient>
+            </View>
+          </View>
+        )}
+
         {/* Victory Celebration Overlay */}
         {isCorrect && (
           <View style={styles.victoryOverlay}>
@@ -762,14 +1386,22 @@ export default function PlayScreen() {
                 style={styles.victoryGradient}
               >
                 <FontAwesome5 name="check-circle" size={48} color="#FFFFFF" style={styles.victoryIcon} />
-                <Text style={styles.victoryTitle}>Sahi Jawab! 🎉</Text>
-                <Text style={styles.victoryPoints}>+100 XP Earned</Text>
+                <Text style={styles.victoryTitle}>Correct Answer! 🎉</Text>
+                <Text style={styles.victoryPoints}>+{earnedPoints} XP Earned</Text>
 
                 <View style={styles.solvedWordDetails}>
                   <Text style={styles.solvedWordLabel}>Correct Word:</Text>
                   <Text style={styles.solvedWordText}>{activePuzzle.answer.toUpperCase()}</Text>
                   <Text style={styles.solvedWordClue}>"{activePuzzle.clue}"</Text>
                 </View>
+
+                {dynamic === "true" && (
+                  <Text style={{ color: "#FFFFFF", fontSize: 14, fontFamily: "PlusJakartaSans_600SemiBold", marginVertical: 8, textAlign: "center" }}>
+                    {answerRevealed 
+                      ? "You revealed the answer. Challenge failed! ❌" 
+                      : "You got 50 XP today! 🎉"}
+                  </Text>
+                )}
 
                 <View style={styles.victoryActionRow}>
                   <TouchableOpacity
@@ -802,6 +1434,46 @@ export default function PlayScreen() {
             </View>
           </View>
         )}
+        {/* Rewarded Ad Modal for Hints */}
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={showHintAdModal}
+          onRequestClose={() => {}}
+        >
+          <View style={styles.modalBackdrop}>
+            <LinearGradient colors={["#0B0F19", "#1E1B4B"]} style={styles.adContent}>
+              <View style={styles.adHeader}>
+                <View style={styles.adBadge}>
+                  <Text style={styles.adBadgeText}>SPONSORED AD FOR HINT</Text>
+                </View>
+              </View>
+
+              <View style={styles.adVideoBody}>
+                <LinearGradient colors={["#10B981", "#059669"]} style={styles.mockVideoCard}>
+                  <MaterialCommunityIcons name="lightbulb-on" size={64} color="#FFFFFF" style={{ marginBottom: 12 }} />
+                  <Text style={styles.mockVideoTitle}>Need a Hint?</Text>
+                  <Text style={styles.mockVideoSub}>Watch this short ad to get a free hint and crack the puzzle!</Text>
+                  <ActivityIndicator size="small" color="#FFFFFF" style={{ marginTop: 20 }} />
+                </LinearGradient>
+              </View>
+
+              <View style={styles.adFooter}>
+                <Text style={styles.adInstruction}>Watch fully to earn your hint...</Text>
+                {hintAdTimeLeft > 0 ? (
+                  <View style={styles.adCountBox}>
+                    <Text style={styles.adCountText}>Hint unlocks in {hintAdTimeLeft}s</Text>
+                  </View>
+                ) : (
+                  <TouchableOpacity onPress={closeHintAdAndReward} style={styles.adCloseBtn}>
+                    <Ionicons name="checkmark-done-circle" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                    <Text style={styles.adCloseBtnText}>Claim Hint</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </LinearGradient>
+          </View>
+        </Modal>
 
       </SafeAreaView>
     </LinearGradient>
@@ -1028,23 +1700,23 @@ const styles = StyleSheet.create({
     marginVertical: 14,
   },
   slotBox: {
-    width: 44,
-    height: 48,
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1.5,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+  },
+  slotEmpty: {
+    backgroundColor: "rgba(255, 255, 255, 0.02)",
+    borderColor: "#1E293B",
+  },
+  slotFilled: {
+    borderColor: "#8B5CF6",
+    backgroundColor: "rgba(139, 92, 246, 0.12)",
   },
   slotLetter: {
     color: "#FFFFFF",
-    fontSize: 22,
-    fontWeight: "bold",
-    fontFamily: "PlusJakartaSans_600SemiBold",
+    fontFamily: "PlusJakartaSans_800ExtraBold",
+    fontWeight: "900",
   },
   hintTextBubble: {
     backgroundColor: "rgba(245, 158, 11, 0.12)",
@@ -1113,16 +1785,24 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+  },
+  tileActive: {
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderColor: "rgba(255, 255, 255, 0.15)",
+  },
+  tileTapped: {
+    backgroundColor: "rgba(255, 255, 255, 0.01)",
+    borderColor: "rgba(255, 255, 255, 0.05)",
+    opacity: 0.25,
   },
   tileLetter: {
     fontSize: 26,
-    fontWeight: "bold",
-    fontFamily: "PlusJakartaSans_600SemiBold",
+    fontFamily: "PlusJakartaSans_800ExtraBold",
+    fontWeight: "900",
+    color: "#FFFFFF",
+  },
+  tileLetterTapped: {
+    color: "rgba(255, 255, 255, 0.2)",
   },
   modalActionRow: {
     flexDirection: "row",
@@ -1413,5 +2093,97 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: "rgba(255, 255, 255, 0.08)",
     backgroundColor: "rgba(2, 17, 34, 0.95)",
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  adContent: {
+    width: "100%",
+    borderRadius: 24,
+    borderWidth: 1.5,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    overflow: "hidden",
+    padding: 24,
+  },
+  adHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  adBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  adBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 9,
+    fontWeight: "bold",
+    letterSpacing: 1,
+  },
+  adVideoBody: {
+    height: 200,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  mockVideoCard: {
+    flex: 1,
+    width: "100%",
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  mockVideoTitle: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginTop: 10,
+  },
+  mockVideoSub: {
+    color: "rgba(255, 255, 255, 0.8)",
+    fontSize: 12,
+    textAlign: "center",
+    marginTop: 4,
+  },
+  adFooter: {
+    alignItems: "center",
+    gap: 12,
+  },
+  adInstruction: {
+    color: "#94A3B8",
+    fontSize: 12,
+    fontStyle: "italic",
+  },
+  adCountBox: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  adCountText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+  adCloseBtn: {
+    backgroundColor: "#10B981",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  adCloseBtnText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "bold",
   },
 });

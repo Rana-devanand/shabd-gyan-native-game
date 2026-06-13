@@ -7,39 +7,83 @@ interface DailyChallengeProps {
   solvedInMode: number;
   totalPuzzles: number;
   onPlay: () => void;
+  completedStatus?: "not_played" | "success" | "failed";
 }
 
 export default function DailyChallenge({
   solvedInMode,
   totalPuzzles,
   onPlay,
+  completedStatus = "not_played",
 }: DailyChallengeProps) {
+  const isCompleted = completedStatus !== "not_played";
+  const isSuccess = completedStatus === "success";
+  const isFailed = completedStatus === "failed";
+
+  // Gradient Colors
+  let gradientColors = ["#3b82f6", "#8b5cf6", "#ec4899"]; // Not played
+  if (isSuccess) {
+    gradientColors = ["#059669", "#10b981", "#34d399"]; // Success
+  } else if (isFailed) {
+    gradientColors = ["#b91c1c", "#dc2626", "#7f1d1d"]; // Failed (Crimson/Red)
+  }
+
+  // Icons
+  let iconName: any = "play";
+  if (isSuccess) {
+    iconName = "checkmark-done";
+  } else if (isFailed) {
+    iconName = "close";
+  }
+
   return (
     <TouchableOpacity
-      activeOpacity={0.85}
+      activeOpacity={isCompleted ? 1.0 : 0.85}
       onPress={onPlay}
+      disabled={isCompleted}
       style={styles.dailyChallengeWrapper}
     >
       <LinearGradient
-        colors={["#3b82f6", "#8b5cf6", "#ec4899"]}
+        colors={gradientColors}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.dailyChallengeCard}
       >
         <View style={styles.challengeCardLeft}>
-          <Text style={styles.challengeCardTitle}>PLAY DAILY CHALLENGE</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 2 }}>
+            <Text style={styles.challengeCardTitle}>
+              {isSuccess 
+                ? "DAILY CHALLENGE COMPLETED" 
+                : isFailed 
+                ? "DAILY CHALLENGE FAILED" 
+                : "PLAY DAILY CHALLENGE"}
+            </Text>
+            {!isCompleted && (
+              <View style={styles.xpBadge}>
+                <Text style={styles.xpBadgeText}>+50 XP</Text>
+              </View>
+            )}
+          </View>
           <Text style={styles.challengeCardSubtitle}>
-            {solvedInMode === totalPuzzles
+            {isSuccess
+              ? "You got 50 XP today! 🎉"
+              : isFailed
+              ? "Challenge failed! Come back tomorrow. 🔒"
+              : solvedInMode === totalPuzzles
               ? "All Puzzles Solved! Replay anytime!"
-              : "Naya word aapka intezar kar raha hai!"}
+              : "A new word is waiting for you!"}
           </Text>
         </View>
         <View style={styles.challengeCardRight}>
           <LinearGradient
             colors={["rgba(255,255,255,0.3)", "rgba(255,255,255,0.1)"]}
-            style={styles.playIconCircle}
+            style={[styles.playIconCircle, !isCompleted && { paddingLeft: 4 }]}
           >
-            <Ionicons name="play" size={28} color="#FFFFFF" />
+            <Ionicons
+              name={iconName}
+              size={28}
+              color="#FFFFFF"
+            />
           </LinearGradient>
         </View>
       </LinearGradient>
@@ -95,6 +139,19 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.4)",
     justifyContent: "center",
     alignItems: "center",
-    paddingLeft: 4,
+  },
+  xpBadge: {
+    backgroundColor: "rgba(255, 255, 255, 0.25)",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.4)",
+  },
+  xpBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "bold",
+    fontFamily: "PlusJakartaSans_700Bold",
   },
 });

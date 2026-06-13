@@ -485,3 +485,87 @@ LANGUAGE sql STABLE SECURITY DEFINER AS $$
     LIMIT  p_limit
     OFFSET p_offset;
 $$;
+
+-- ================================================================
+-- TABLE 10: user_rewards
+-- Unlocked rewards (discount coupons at 1k, mobile recharge at 50k).
+-- ================================================================
+CREATE TABLE IF NOT EXISTS public.user_rewards (
+    id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id       UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    reward_type   TEXT        NOT NULL CHECK (reward_type IN ('coupon_1k', 'recharge_50k')),
+    reward_value  TEXT        NOT NULL,
+    claimed_at    TIMESTAMPTZ DEFAULT now() NOT NULL,
+    created_at    TIMESTAMPTZ DEFAULT now() NOT NULL,
+    UNIQUE(user_id, reward_type)
+);
+
+ALTER TABLE public.user_rewards ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "rewards_own" ON public.user_rewards
+    USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- ================================================================
+-- TABLE 11: user_quests
+-- Tracks daily quest attempts/completions.
+-- ================================================================
+CREATE TABLE IF NOT EXISTS public.user_quests (
+    id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id        UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    quest_type     TEXT        NOT NULL CHECK (quest_type IN ('daily_warrior', 'decipher_scroll', 'high_score_hunt')),
+    status         TEXT        NOT NULL CHECK (status IN ('not_started', 'played', 'completed')),
+    score_earned   INTEGER     DEFAULT 0 NOT NULL,
+    played_date    DATE        DEFAULT CURRENT_DATE NOT NULL,
+    created_at     TIMESTAMPTZ DEFAULT now() NOT NULL,
+    updated_at     TIMESTAMPTZ DEFAULT now() NOT NULL,
+    UNIQUE(user_id, quest_type, played_date)
+);
+
+ALTER TABLE public.user_quests ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "quests_own" ON public.user_quests
+    USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- ================================================================
+-- TABLE 12: user_played_quizzes
+-- Tracks detailed logs of every puzzle/quiz played by the user.
+-- ================================================================
+CREATE TABLE IF NOT EXISTS public.user_played_quizzes (
+    id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id         UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    puzzle_id       TEXT        NOT NULL,
+    category        TEXT        NOT NULL,
+    difficulty      TEXT        NOT NULL,
+    mode            TEXT        NOT NULL,
+    question        TEXT        NOT NULL,
+    answer          TEXT        NOT NULL,
+    used_hint       BOOLEAN     DEFAULT FALSE NOT NULL,
+    revealed_answer BOOLEAN     DEFAULT FALSE NOT NULL,
+    coins_earned    INTEGER     DEFAULT 0 NOT NULL,
+    user_answer     TEXT,
+    played_at       TIMESTAMPTZ DEFAULT now() NOT NULL
+);
+
+ALTER TABLE public.user_played_quizzes ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "quizzes_own" ON public.user_played_quizzes
+    USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+
+-- ================================================================
+-- TABLE 13: user_daily_streaks
+-- Logs daily login check-ins to track calendar streak consistency.
+-- ================================================================
+CREATE TABLE IF NOT EXISTS public.user_daily_streaks (
+    id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id        UUID        NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    login_date     DATE        DEFAULT CURRENT_DATE NOT NULL,
+    streak_count   INTEGER     NOT NULL,
+    created_at     TIMESTAMPTZ DEFAULT now() NOT NULL,
+    UNIQUE(user_id, login_date)
+);
+
+ALTER TABLE public.user_daily_streaks ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "streaks_own" ON public.user_daily_streaks
+    USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid());
+

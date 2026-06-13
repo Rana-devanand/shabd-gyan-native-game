@@ -4,7 +4,7 @@
     "slug": "WordWala",
     "version": "1.0.0",
     "icon": "./assets/images/icon.png",
-    "scheme": "WordWala",
+    "scheme": "wordwala",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -40,5 +40,9 @@
     "experiments": {
       "typedRoutes": true
     }
+  },
+  "react-native-google-mobile-ads": {
+    "android_app_id": "ca-app-pub-4526433011293142~3137864455",
+    "ios_app_id": "ca-app-pub-4526433011293142~3137864455"
   }
 }
